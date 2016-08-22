@@ -1,7 +1,7 @@
 {
   "build": {
-    "appId": "com.example.electron-boilerplate",
-    "app-category-type": "your.app.category.type",
+    "appId": "codes.ai.language.server",
+    "app-category-type": "Developer Productivity",
     "win": {
       "target": [
         "nsis"

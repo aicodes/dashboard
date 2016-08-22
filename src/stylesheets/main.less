@@ -9,11 +9,19 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: sans-serif;
+    font-family: 'Roboto', sans-serif;
 }
 
 a {
     text-decoration: none;
+}
+
+p {
+    display: block;
+}
+
+.source {
+    font-family: 'Source Code Pro', monospace;
 }
 
 .container {
@@ -22,4 +30,20 @@ a {
 
 .subtitle {
     color: gray;
+}
+
+.divTable{
+    display: table;
+    width: 95%;
+}
+.divTableRow {
+    display: table-row;
+}
+.divTableCell, .divTableHead {
+    border: 1px solid #999999;
+    display: table-cell;
+    padding: 3px 10px;
+}
+.divTableBody {
+    display: table-row-group;
 }

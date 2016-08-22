@@ -1,11 +1,11 @@
 {
-  "name": "electron-boilerplate",
-  "productName": "Electron Boilerplate",
-  "description": "Starter for your Electron application",
-  "version": "0.0.0",
-  "author": "Mr. Gumby <mr.gumby@example.com>",
-  "copyright": "© 2016, Gumby inc.",
-  "homepage": "http://example.com",
+  "name": "ai.codes.dashboard",
+  "productName": "AI.codes Developer Dashboard",
+  "description": "A local dashboard for your language server",
+  "version": "0.0.1",
+  "author": "Eric Xu <exu@ai.codes>",
+  "copyright": "© 2016, AI.codes Inc",
+  "homepage": "http://www.ai.codes",
   "license": "MIT",
   "main": "background.js",
   "dependencies": {
