@@ -1,7 +1,7 @@
 {
   "build": {
     "appId": "codes.ai.language.server",
-    "app-category-type": "Developer Productivity",
+    "category":"public.app-category.developer-tools",
     "win": {
       "target": [
         "nsis"
@@ -51,5 +51,9 @@
     "source-map-support": "^0.4.2",
     "spectron": "^3.3.0",
     "yargs": "^4.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/username/repository.git"
   }
 }
