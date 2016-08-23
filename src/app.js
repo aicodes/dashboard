@@ -54,6 +54,12 @@ function updateICEDisplay(error, iceId, intention, className_context, extension)
 }
 
 function iceModelToDisplay(iceModel) {
+    var welcomeDiv = document.getElementById('welcome-div');
+    if (welcomeDiv !=null) {
+        welcomeDiv.outerHTML = '';
+    }
+    document.getElementById('ice-body').style.display='block';
+
     var intentionNode = document.getElementById("intention");
     var contextNode = document.getElementById("context");
     var extensionNode = document.getElementById("extension");
@@ -70,13 +76,13 @@ function iceModelToDisplay(iceModel) {
 
     intentionNode.appendChild(document.createTextNode(iceModel.get('intention')));
     for (let item of iceModel.get('context')) {
-        contextNode.appendChild(document.createTextNode(item + "; "));
+        contextNode.appendChild(document.createTextNode(item + "\n"));
     }
     for (let item of iceModel.get('extension')) {
         extensionNode.appendChild(
             document.createElement("PRE").appendChild(
                 document.createElement("CODE").appendChild(
-                    document.createTextNode(JSON.stringify(item, null, 2)))));
+                    document.createTextNode(JSON.stringify(item, null, 2) + '\n'))));
     }
 }
 

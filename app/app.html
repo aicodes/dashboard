@@ -5,6 +5,16 @@
     <title>AI.codes Dashboard</title>
     <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Roboto" rel="stylesheet">
     <link href="stylesheets/main.css" rel="stylesheet" type="text/css">
+    <link href="stylesheets/github-markdown.css" rel="stylesheet" >
+    <style>
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+        }
+    </style>
 
     <script src="helpers/context_menu.js"></script>
     <script src="helpers/external_links.js"></script>
@@ -18,7 +28,22 @@
 </head>
 <body>
 
-<div id="iceId" style="display: none;"></div>
+<div id="welcome-div" style="width: 100%;">
+<webview id="welcome" src="http://www.ai.codes/welcome.html" style="display:flex; height: 100%; width: 100%;"></webview>
+</div>
+<div>
+<article class="markdown-body" id="ice-body" style="display: none;">
+    <div id="iceId" style="display: none;"></div>
+    <h2>Intention</h2>
+    <div id="intention">Intention of a user</div>
+    <h2>Context</h2>
+    <div><pre><code id="context">Context Class</code></pre></div>
+    <h2>Extension</h2>
+    <div><pre><code id="extension">Code extensions, suggested by ai.codes</code></pre></div>
+</article>
+</div>
+
+<!--
 <div id="ice-table-div">
     <div class="table-ice" style="width: 100%;border: 1px solid #000;" >
         <div class="tbody">
@@ -37,6 +62,7 @@
         </div>
     </div>
 </div>
+-->
 
 <div id="chart_div"> </div>
 <!--    <webview id="docs" src="https://www.github.com/" style="display:inline-flex; width:1000px; height:600px">
