@@ -3,18 +3,6 @@
 
 // Use new ES6 modules syntax for everything.
 import { remote, ipcRenderer } from 'electron'; // native electron module
-import jetpack from 'fs-jetpack'; // module loaded from npm
-import env from './env';
-
-console.log('Loaded environment variables:', env);
-
-var app = remote.app;
-
-var appDir = jetpack.cwd(app.getAppPath());
-
-// Holy crap! This is browser window with HTML and stuff, but I can read
-// here files like it is node.js! Welcome to Electron world :)
-console.log('The author of this app is:', appDir.read('package.json', 'json').author);
 
 function fetchClassExtension(className, callback) {
     var http = require('http');
@@ -31,24 +19,28 @@ function fetchClassExtension(className, callback) {
     });
 }
 
-var iceModel = new Map();
+var iceModel = {
+    id: -1,
+    intention: '',
+    context: new Set(),
+    extension: new Set(),
+};
 
 function updateICEDisplay(error, iceId, intention, className_context, extension) {
     "use strict";
     // TODO(exu): Objectify iceModel.
-    if (iceModel.get('id') == iceId) {
-        if (! iceModel.get('context').has(className_context)) {
-            iceModel.get('context').add(className_context);
-            iceModel.get('extension').add(extension);
+    if (iceModel.id == iceId) {
+        if (! iceModel.context.has(className_context)) {
+            iceModel.context.add(className_context);
+            iceModel.extension.add(extension);
         }
     } else {    // construct a new ice Model
-        iceModel.clear();
-        iceModel.set('id', iceId);
-        iceModel.set('intention', intention)
-        iceModel.set('context', new Set());
-        iceModel.get('context').add(className_context);
-        iceModel.set('extension', new Set());
-        iceModel.get('extension').add(extension);
+        iceModel.id = iceId;
+        iceModel.intention = intention;
+        iceModel.context.clear();
+        iceModel.context.add(className_context);
+        iceModel.extension.clear();
+        iceModel.extension.add(extension);
     }
     iceModelToDisplay(iceModel);
 }
@@ -74,11 +66,11 @@ function iceModelToDisplay(iceModel) {
         extensionNode.removeChild(extensionNode.firstChild);
     }
 
-    intentionNode.appendChild(document.createTextNode(iceModel.get('intention')));
-    for (let item of iceModel.get('context')) {
+    intentionNode.appendChild(document.createTextNode(iceModel.intention));
+    for (let item of iceModel.context) {
         contextNode.appendChild(document.createTextNode(item + "\n"));
     }
-    for (let item of iceModel.get('extension')) {
+    for (let item of iceModel.extension) {
         extensionNode.appendChild(
             document.createElement("PRE").appendChild(
                 document.createElement("CODE").appendChild(
@@ -86,6 +78,7 @@ function iceModelToDisplay(iceModel) {
     }
 }
 
+/*
 var plotGoogleCharts = function(usage) {
     "use strict";
     var json_usage = JSON.parse(usage);
@@ -111,6 +104,7 @@ var plotGoogleCharts = function(usage) {
     };
     chart.draw(data, options);
 };
+*/
 
 ipcRenderer.on('ice-display', updateICEDisplay);
 

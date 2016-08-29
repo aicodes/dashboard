@@ -11,6 +11,7 @@ import createWindow from './helpers/window';
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from './env';
+import create_server from './serve';
 
 var setApplicationMenu = function () {
     var menus = [editMenuTemplate];
@@ -45,47 +46,10 @@ app.on('ready', function () {
         mainWindow.openDevTools();
     }
 
-    // ==== ai.codes code begin ========
-    // TODO(exu): move these to a separate js file.
-    var http = require('http');
-
-    function handleRequest(request, response){
-        if (request.url == '/favicon.ico') {
-            response.end('');
-            return;
-        }
-
-        var res = request.url.substring(1).split('/');
-        if (res.length != 2) {
-            response.end("Not a valid URL");
-            return;
-        }
-
-        var iceId = res[0];
-        var className = res[1];
-
-        var result = {
-            '.expiresIn': 1,    // default cache TTL for cold lookup: 1s
-        };
-
-        if (className.startsWith("com.fitbit")) {
-            content.send('ice-display', iceId, "JVM method auto-complete", className, 'No extensions per privacy policy');
-            result = {};
-        } else {
-            console.log("check if cache has \'" + className + "\'");
-            if (cache.has(className)) {
-                result = cache.get(className);
-                content.send("ice-display", iceId, "JVM method auto-complete", className, result);
-            } else {
-                content.send("ice-lookup", iceId, "JVM method auto-complete", className);
-            }
-        }
-        response.writeHead(200, {"Content-Type": "application/json"});
-        response.end(JSON.stringify(result));   // has to be a string or buffer...
-    }
-
+    // ==== Starts a local Ai.codes server ========
     const PORT = 26337;
-    var server = http.createServer(handleRequest);
+    var server = create_server(content, cache);
+
     server.listen(PORT, function(){
         //Callback triggered when server is successfully listening. Hurray!
         console.log("Server listening on: http://localhost:%s", PORT);
@@ -97,6 +61,11 @@ app.on('ready', function () {
 app.on('window-all-closed', function () {
     app.quit();
 });
+
+app.on('will-quit', function () {
+    app.quit();
+});
+
 
 // Store the class -> extension (JSON object) mapping to cache.
 ipcMain.on('ice-cache', (event, className, extension) => {
