@@ -1,5 +1,3 @@
-'use strict';
-
 // This is main process of Electron, started as first thing when your
 // app starts. This script is running through entire life of your application.
 // It doesn't have any windows which you can see on screen, but we can open
@@ -13,9 +11,9 @@ import createWindow from './helpers/window';
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from './env';
-import create_server from './serve';
+import createServer from './serve';
 
-const setApplicationMenu = function () {
+const setApplicationMenu = function setApplicationMenu() {
   const menus = [editMenuTemplate];
   if (env.name !== 'production') {
     menus.push(devMenuTemplate);
@@ -28,12 +26,12 @@ const setApplicationMenu = function () {
 // on same machine like those are two separate apps.
 if (env.name !== 'production') {
   const userDataPath = app.getPath('userData');
-  app.setPath('userData', userDataPath + ' (' + env.name + ')');
+  app.setPath('userData', `${userDataPath} (${env.name})`);
 }
 
 const cache = new Map();
 
-app.on('ready', function () {
+app.on('ready', () => {
   setApplicationMenu();
 
   const mainWindow = createWindow('main', {
@@ -50,36 +48,39 @@ app.on('ready', function () {
 
     // ==== Starts a local Ai.codes server ========
   const PORT = 26337;
-  const server = create_server(content, cache);
+  const server = createServer(content, cache);
 
-  server.listen(PORT, function () {
-        // Callback triggered when server is successfully listening. Hurray!
+  server.listen(PORT, () => {
+    // Callback triggered when server is successfully listening. Hurray!
     console.log('Server listening on: http://localhost:%s', PORT);
   });
-    // ====== ai.codes code ends =========
+  // ====== ai.codes code ends =========
 });
 
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
   app.quit();
 });
 
-app.on('will-quit', function () {
+app.on('will-quit', () => {
   app.quit();
 });
 
 // Sometimes methods from java.lang.Objects dominates the weight.
 // This gives all these methods a discount before we have a better way to deal with them.
-const java_lang_objectDiscount = 0.1;
+const javaLangObjectDiscount = 0.1;
+const javaLangObject = 'java.lang.Object';
 
 // Store the class -> extension (JSON object) mapping to cache.
 ipcMain.on('ice-cache', (event, className, extension) => {
-  'use strict';
-    // console.log('In Main process, storing to cache \'' + className + '\' -> ' + JSON.stringify(extension, null, 2));
-    // console.log('JS cache size is  ' + cache.size);
-  if (className == 'java.lang.Object') {
-    for (const method in extension) {
-      extension[method] = java_lang_objectDiscount * extension[method];
+  // console.log('In Main process, storing to cache \''
+  // + className + '\' -> ' + JSON.stringify(extension, null, 2));
+  // console.log('JS cache size is  ' + cache.size);
+  if (className === javaLangObject) {
+    const newExtension = Object.assign({}, extension);
+    for (const [k, v] of Object.entries(extension)) {
+      newExtension[k] = javaLangObjectDiscount * v;
     }
+  } else {
+    cache.set(className, extension);
   }
-  cache.set(className, extension);
 });

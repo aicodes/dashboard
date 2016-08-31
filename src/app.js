@@ -1,36 +1,35 @@
-import { remote, ipcRenderer } from 'electron'; // native electron module
-import { IceModel } from './ice_model';
+import { ipcRenderer } from 'electron'; // native electron module
+import IceModel from './ice_model';
+
+const http = require('http');
+
+const iceModel = new IceModel();
 
 function fetchClassExtension(className, callback) {
-  const http = require('http');
-
   const url = `http://api.ai.codes/jvm/usage/${className}`;
   http.get(url, (response) => {
     let body = '';
-    response.on('data', function (d) {
+    response.on('data', (d) => {
       body += d;
     });
-    response.on('end', function () {
+    response.on('end', () => {
       const parsed = JSON.parse(body);
       callback(parsed);
     });
   });
 }
 
-const iceModel = new IceModel();
-
-function updateICEDisplay(error, iceId, intention, className_context, extension) {
-  'use strict';
-  if (iceModel.id == iceId) {
-    if (!iceModel.context.has(className_context)) {
-      iceModel.context.add(className_context);
+function updateICEDisplay(error, iceId, intention, classContext, extension) {
+  if (iceModel.id === iceId) {
+    if (!iceModel.context.has(classContext)) {
+      iceModel.context.add(classContext);
       iceModel.extension.add(extension);
     }
   } else {    // construct a new ice Model
     iceModel.id = iceId;
     iceModel.intention = intention;
     iceModel.context.clear();
-    iceModel.context.add(className_context);
+    iceModel.context.add(classContext);
     iceModel.extension.clear();
     iceModel.extension.add(extension);
   }
@@ -105,7 +104,6 @@ ipcRenderer.on('ice-display', updateICEDisplay);
 // Right now we just return from cache directly.
 ipcRenderer.on('ice-lookup', (event, iceId, intention, className) => {
   fetchClassExtension(className, extension => {
-    'use strict';
     ipcRenderer.send('ice-cache', className, extension);
     updateICEDisplay(null, iceId, intention, className, extension);
   });
