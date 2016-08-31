@@ -3,6 +3,7 @@
 
 // Use new ES6 modules syntax for everything.
 import { remote, ipcRenderer } from 'electron'; // native electron module
+import { IceModel } from './ice_model';
 
 function fetchClassExtension(className, callback) {
     var http = require('http');
@@ -19,16 +20,10 @@ function fetchClassExtension(className, callback) {
     });
 }
 
-var iceModel = {
-    id: -1,
-    intention: '',
-    context: new Set(),
-    extension: new Set(),
-};
+var iceModel = new IceModel();
 
 function updateICEDisplay(error, iceId, intention, className_context, extension) {
     "use strict";
-    // TODO(exu): Objectify iceModel.
     if (iceModel.id == iceId) {
         if (! iceModel.context.has(className_context)) {
             iceModel.context.add(className_context);
