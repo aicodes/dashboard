@@ -4,5 +4,9 @@
         "react",
         "jsx-a11y",
         "import"
-    ]
+    ],
+    "env": {	// for Electron
+        "browser": true,
+        "node": true
+    }
 }
