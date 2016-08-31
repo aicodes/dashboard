@@ -1,23 +1,20 @@
-// Here is the starting point for your application code (not the electron main).
-// All stuff below is just to show you how it works. You can delete all of it.
-
-// Use new ES6 modules syntax for everything.
 import { remote, ipcRenderer } from 'electron'; // native electron module
 import { IceModel } from './ice_model';
 
 function fetchClassExtension(className, callback) {
-    var http = require('http');
-    const url = "http://api.ai.codes/jvm/usage/" + className;
-    http.get(url, (response) => {
-        var body = '';
-        response.on('data', function(d) {
-            body += d;
-        });
-        response.on('end', function() {
-            var parsed = JSON.parse(body);
-            callback(parsed);
-        });
-    });
+  var http = require('http');
+
+  const url = `http://api.ai.codes/jvm/usage/${className}`;
+  http.get(url, (response) => {
+      var body = '';
+      response.on('data', function(d) {
+          body += d;
+      });
+      response.on('end', function() {
+          var parsed = JSON.parse(body);
+          callback(parsed);
+      });
+  });
 }
 
 var iceModel = new IceModel();
@@ -40,6 +37,7 @@ function updateICEDisplay(error, iceId, intention, className_context, extension)
     iceModelToDisplay(iceModel);
 }
 
+// TODO(exu): merge different methods together and hopefully sort by priority.
 function iceModelToDisplay(iceModel) {
     var welcomeDiv = document.getElementById('welcome-div');
     if (welcomeDiv !=null) {
@@ -103,6 +101,8 @@ var plotGoogleCharts = function(usage) {
 
 ipcRenderer.on('ice-display', updateICEDisplay);
 
+// TODO(exu): there is one more step from cache to ICE.
+// Right now we just return from cache directly.
 ipcRenderer.on('ice-lookup', (event, iceId, intention, className) => {
     fetchClassExtension(className, extension => {
         "use strict";

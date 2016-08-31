@@ -1,6 +1,4 @@
-/**
- * Created by xuy on 8/29/16.
- */
+"use strict";
 
 var http = require('http');
 

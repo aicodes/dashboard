@@ -1,3 +1,5 @@
+"use strict";
+
 // This is main process of Electron, started as first thing when your
 // app starts. This script is running through entire life of your application.
 // It doesn't have any windows which you can see on screen, but we can open
@@ -66,11 +68,19 @@ app.on('will-quit', function () {
     app.quit();
 });
 
+// Sometimes methods from java.lang.Objects dominates the weight.
+// This gives all these methods a discount before we have a better way to deal with them.
+const java_lang_objectDiscount = 0.1;
 
 // Store the class -> extension (JSON object) mapping to cache.
 ipcMain.on('ice-cache', (event, className, extension) => {
     "use strict";
-    console.log('In Main process, storing to cache \'' + className + '\' -> ' + JSON.stringify(extension, null, 2));
-    console.log('JS cache size is  ' + cache.size);
+    // console.log('In Main process, storing to cache \'' + className + '\' -> ' + JSON.stringify(extension, null, 2));
+    // console.log('JS cache size is  ' + cache.size);
+    if (className == "java.lang.Object") {
+        for (var method in extension) {
+            extension[method] = java_lang_objectDiscount * extension[method]
+        }
+    }
     cache.set(className, extension);
 });

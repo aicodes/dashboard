@@ -1,3 +1,5 @@
+"use strict";
+
 export class IceModel {
     constructor() {
         this.id = -1;
@@ -5,4 +7,8 @@ export class IceModel {
         this.context = new Set();
         this.extension = new Set();
     }
+
+
+
+
 }
