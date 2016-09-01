@@ -7,11 +7,13 @@ import { app, Menu, ipcMain } from 'electron';
 import { devMenuTemplate } from './menu/dev_menu_template';
 import { editMenuTemplate } from './menu/edit_menu_template';
 import createWindow from './helpers/window';
+import populateClasses from './warm_up';
+
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from './env';
-import createServer from './serve';
+import createServer from './local_server';
 
 const setApplicationMenu = function setApplicationMenu() {
   const menus = [editMenuTemplate];
@@ -46,7 +48,12 @@ app.on('ready', () => {
     mainWindow.openDevTools();
   }
 
-    // ==== Starts a local Ai.codes server ========
+  // ==== Starts a local Ai.codes server ========
+  // Pre-populating a bunch of frequently used classes.
+  content.on('did-finish-load', () => {
+    populateClasses(content);
+  });
+
   const PORT = 26337;
   const server = createServer(content, cache);
 
@@ -76,9 +83,11 @@ ipcMain.on('ice-cache', (event, className, extension) => {
   // + className + '\' -> ' + JSON.stringify(extension, null, 2));
   // console.log('JS cache size is  ' + cache.size);
   if (className === javaLangObject) {
-    const newExtension = Object.assign({}, extension);
-    for (const [k, v] of Object.entries(extension)) {
-      newExtension[k] = javaLangObjectDiscount * v;
+    const newExtension = {};
+    for (const k in extension) {
+      if ({}.hasOwnProperty.call(extension, k)) {
+        newExtension[k] = javaLangObjectDiscount * extension[k];
+      }
     }
   } else {
     cache.set(className, extension);
