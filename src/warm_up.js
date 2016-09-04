@@ -51,7 +51,7 @@ const vipClasses = [
 
 function lookupClasses(content) {
   for (const className of vipClasses) {
-    content.send('ice-lookup-quiet', className);
+    content.send('fetch-method-usage-quiet', className);
   }
 }
 

@@ -8,12 +8,13 @@ import { devMenuTemplate } from './menu/dev_menu_template';
 import { editMenuTemplate } from './menu/edit_menu_template';
 import createWindow from './helpers/window';
 import populateClasses from './warm_up';
-
+import cache from './simple_cache';
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from './env';
-import createServer from './local_server';
+import createServer from './editor_api';
+
 
 const setApplicationMenu = function setApplicationMenu() {
   const menus = [editMenuTemplate];
@@ -30,8 +31,6 @@ if (env.name !== 'production') {
   const userDataPath = app.getPath('userData');
   app.setPath('userData', `${userDataPath} (${env.name})`);
 }
-
-const cache = new Map();
 
 app.on('ready', () => {
   setApplicationMenu();

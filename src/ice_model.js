@@ -1,5 +1,5 @@
 // The Model object to represent an ICE.
-export default class {
+class IceModel {
   constructor() {
     this.id = -1;
     this.intention = '';
@@ -23,3 +23,5 @@ export default class {
     }
   }
 }
+
+export const iceModel = new IceModel();

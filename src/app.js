@@ -1,10 +1,7 @@
 import { ipcRenderer } from 'electron'; // native electron module
-import IceModel from './ice_model';
+import { iceModel } from './ice_model';
 import updateView from './dashboard_view';
-import fetchMethodUsage from './server_api';
-
-const iceModel = new IceModel();
-
+import { fetchMethodUsage, fetchSimilarity } from './server_api';
 
 function updateIce(error, iceId, intention, classContext, extension) {
   // Update Model object.
@@ -24,9 +21,15 @@ ipcRenderer.on('ice-lookup', (event, iceId, intention, className) => {
   });
 });
 
-// A special class just for pre-populating class names.
-ipcRenderer.on('ice-lookup-quiet', (event, className) => {
+
+// ------- Pre-populating key metrics --------------
+
+ipcRenderer.on('fetch-method-usage-quiet', (event, className) => {
   fetchMethodUsage(className, extension => {
     ipcRenderer.send('ice-cache', className, extension);
   });
+});
+
+ipcRenderer.on('fetch-similarity-quiet', (event, contextName, items) => {
+    fetchSimilarity();
 });

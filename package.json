@@ -61,5 +61,8 @@
   "repository": {
     "type": "git",
     "url": "git://github.com/username/repository.git"
+  },
+  "dependencies": {
+    "express": "^4.14.0"
   }
 }
