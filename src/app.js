@@ -4,12 +4,12 @@ import updateView from './dashboard_view';
 import {fetchMethodUsage, fetchSimilarity} from './server_api';
 
 
-function updateIce(error, iceId, intention, classContext, extension) {
+function updateModelContextAndView(error, contextId, context, extension) {
     // Update Model object.
-    iceModel.update(iceId, intention, classContext, extension);
+    iceModel.updateContext(contextId, context, extension);
 
     // Update view
-    updateView(iceModel); // update the MD view.
+    updateView(iceModel); // updateContext the MD view.
 }
 
 // Sometimes methods from java.lang.Objects dominates the weight.
@@ -34,34 +34,40 @@ function saveToCache(key, value) {
     ipcRenderer.send('ice-cache', key, new_value);
 }
 
+// Key method for managing ICE model.
+ipcRenderer.on('ice-update-intention', (event, intention) => {
+    let result = iceModel.updateIntention(intention);
+    if (result) {
+        updateView(iceModel);
+    }
+});
 
-ipcRenderer.on('ice-display', updateIce);
+
+ipcRenderer.on('ice-display', updateModelContextAndView);
 
 // ------------ Event listener to trigger server API requests -------------------
 
-ipcRenderer.on('similarity-lookup', (event, iceId, className, context, cache_key) => {
-    fetchSimilarity(className, context, result => {
-        if (result['status'] != 404) { // server has it. otherwise there is no hope to update ice.
+ipcRenderer.on('similarity-lookup', (event, contextId, className, outerMethod, cache_key) => {
+    fetchSimilarity(className, outerMethod, result => {
+        if (result['status'] != 404) { // server has it. otherwise there is no hope to updateContext ice.
             saveToCache(cache_key, result);
-            let intention = {};
-            intention['method'] = context;
-            updateIce(null, iceId, intention, className, result);
+            updateModelContextAndView(null, contextId, className, result);
         }
     });
 });
 
-ipcRenderer.on('ice-lookup', (event, iceId, intention, className) => {
+ipcRenderer.on('usage-lookup', (event, contextId, className) => {
     fetchMethodUsage(className, results => {
         if (results['status'] != 404) {
             saveToCache(className, results);
-            updateIce(null, iceId, intention, className, results);
+            updateModelContextAndView(null, contextId, className, results);
         }
     });
 });
 
 
 // ------- Pre-populating key metrics --------------
-
+/*
 ipcRenderer.on('fetch-method-usage-quiet', (event, className) => {
     fetchMethodUsage(className, results => {
         saveToCache(className, results);
@@ -73,3 +79,4 @@ ipcRenderer.on('fetch-similarity-quiet', (event, className, contextName) => {
 
     });
 });
+*/

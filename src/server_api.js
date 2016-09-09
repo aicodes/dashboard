@@ -19,8 +19,8 @@ function fetchMethodUsage(className, callback) {
     getJson(url, callback);
 }
 
-function fetchSimilarity(className, contextName, callback) {
-    const url = `https://api.ai.codes/jvm/v1/${className}?c=${contextName}`;
+function fetchSimilarity(className, outerMethod, callback) {
+    const url = `https://api.ai.codes/jvm/v1/${className}?c=${outerMethod}`;
     getJson(url, callback);
 }
 

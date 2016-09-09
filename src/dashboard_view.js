@@ -20,7 +20,8 @@ function update(iceModel) {
         extensionNode.removeChild(extensionNode.firstChild);
     }
 
-    intentionNode.appendChild(document.createTextNode(JSON.stringify(iceModel.intention)));
+    intentionNode.appendChild(document.createTextNode(
+        JSON.stringify(iceModel.intention, null, 2)));
     for (const item of iceModel.context) {
         contextNode.appendChild(document.createTextNode(`${item}\n`));
     }

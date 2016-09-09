@@ -37,7 +37,7 @@ function createExpressServer(content, server_cache) {
         const context = req.params['context'];
         const items = req.params['items'].split(',');
 
-        content.send('ice-update', iceId, context);
+        content.send('ice-updateContext', iceId, context);
 
         for (let item of items) {
             const key = context + ':' + item;
@@ -50,17 +50,28 @@ function createExpressServer(content, server_cache) {
 
     app.get('/ping/:method_name', (req, res) => {
         const methodName = req.params['method_name'];
+
         console.log(methodName);
+
+        const l = methodName.split("&");
+        const keyMethod = l[0];
+        const intention = {};
+        intention['method'] = keyMethod;
+        intention['stanza'] = [];
+        for (let i = 1; i < l.length; ++i) {
+            intention['stanza'].push(l[i].split('+').join(' '));
+        }
+        content.send('ice-update-intention', intention);
         res.status(204).end();
     });
 
 
     // -------- Real API -----
 
-    app.get('/similarity/:ice/:className/:context', (req, res) => {
-        const iceId = req.params['ice'];
+    app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
+        const contextId = req.params['contextId'];
         const className = req.params['className'];
-        const context = req.params['context'];
+        const outerMethod = req.params['outerMethod'];
 
         let result = {
             'header': {
@@ -69,24 +80,20 @@ function createExpressServer(content, server_cache) {
             'response': {}// default cache TTL for cold lookup: 1s
         };
 
-        const cache_key = context + ':' + className;
+        const cache_key = outerMethod + ':' + className;
         if (server_cache.has(cache_key)) {
             result['response'] = server_cache.get(cache_key);
-            content.send('ice-display', iceId,
-                {'method': context},
-                cache_key,
-                result['response']);
+            content.send('ice-display', contextId, className, result['response']);
         } else {
-            content.send('similarity-lookup', iceId, className, context, cache_key);
+            content.send('similarity-lookup', contextId, className, outerMethod, cache_key);
         }
         res.json(result);
     });
 
     // ----------V 0.1 API just for method usage ----------//
-    app.get('/usage/:ice/:className', (req, res) => {
-        const iceId = req.params['ice'];
+    app.get('/usage/:contextId/:className', (req, res) => {
+        const contextId = req.params['contextId'];
         const className = req.params['className'];
-        const context = className;
 
         let result = {
             'header': {
@@ -97,14 +104,9 @@ function createExpressServer(content, server_cache) {
         if (server_cache.has(className)) {
             result['response'] = server_cache.get(className);
 
-            content.send('ice-display', iceId,
-                {'method': context},
-                {'class': className},
-                result['response']);
+            content.send('ice-display', contextId, className, result['response']);
         } else {
-            content.send('ice-lookup', iceId,
-                'JVM method auto-complete',
-                className);
+            content.send('usage-lookup', contextId, className);
         }
         res.json(result);
     });
