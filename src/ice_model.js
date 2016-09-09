@@ -1,27 +1,26 @@
 // The Model object to represent an ICE.
 class IceModel {
-  constructor() {
-    this.id = -1;
-    this.intention = '';
-    this.context = new Set();
-    this.extension = new Set();
-  }
-
-  update(id, intention, context, extension) {
-    if (this.id === id) {
-      if (!this.context.has(context)) {
-        this.context.add(context);
-        this.extension.add(extension);
-      }
-    } else {    // construct a new ice Model
-      this.id = id;
-      this.intention = intention;
-      this.context.clear();
-      this.context.add(context);
-      this.extension.clear();
-      this.extension.add(extension);
+    constructor() {
+        this.context_id = -1;
+        this.intention = {};
+        this.context = new Set();
+        this.extension = [];
     }
-  }
+
+    update(context_id, intention, context, extension) {
+        this.intention = intention;
+        if (this.context_id != context_id) {
+            this.context.clear();
+            this.extension.length = 0;
+            this.context_id = context_id;
+        }
+        if (!this.context.has(context)) {
+            this.context.add(context);
+            const newExtension = {};
+            newExtension[context] = extension;
+            this.extension.push(newExtension);
+        }
+    }
 }
 
 export const iceModel = new IceModel();

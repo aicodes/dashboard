@@ -1,24 +1,27 @@
-// This file defines the API between ai.codes local server and code editors.
+/**
+ * Owned by the electron main process. This module defines communication protocol between code
+ * editors and ai.codes local server. Implemented as an express server.
+ *
+ * Two types of requests are supported.
+ *
+ * 1. Request:
+ *          GET     /usage/<ice_id>/ClassName
+ *    Response:
+ *          key value JSON object, Key is method name (short), and value be the probability
+ *          of the method call (usage frequency).
+ *
+ * 2. Request:
+ *          GET    /similarity/<ice_id>/<context-string>/ClassName
+ *    Response:
+ *          key value JSON object. Key is the method name (short), value is the similarity to the context name.
+ *
+ * Both types of requests are "async", meaning if local server does not have it, it would immediately return
+ * HTTP 202 Accepted. Clients are responsible to query the API again later.
+ */
 
-// For now we support two simple API methods:
-//   *  GET localserver:CODES/<ice_id>/JavaClassName
-//      response:
-//          key value JSON objects where key is method name defined under the class, and value be the probability
-//          of the method call.
-
-//   *  GET localserver:CODES/relevance/<ice_id>/<context-string>/ListOfJavaClassOrMethodNames
-//      response:
-//          key value JSON objects. Key is the query key, value is the similarity to the context name.
-
-
-//   *  GET localserver:CODES/quiet_fetch/<context-string>/ListOfClassOrMethods
-//        response: 202 Accepted
-import cache from './simple_cache';
 import express from 'express';
 
-const DEFAULT_WEIGHT = 0.05;
-
-function createExpressServer(content) {
+function createExpressServer(content, server_cache) {
     const app = express();
 
     // ---------- V 0.2 API ----------------
@@ -38,56 +41,72 @@ function createExpressServer(content) {
 
         for (let item of items) {
             const key = context + ':' + item;
-            if (!cache.has(key)) {
+            if (!server_cache.has(key)) {
                 content.send('relevance-lookup', context, items);
             }
         }
-        res.status(202).end('Request Accepted');
+        res.status(201).end('Request Accepted');
     });
 
-    app.get('/relevance/:ice/:context/:items', (req, res) => {
+    app.get('/ping/:method_name', (req, res) => {
+        const methodName = req.params['method_name'];
+        console.log(methodName);
+        res.status(204).end();
+    });
+
+
+    // -------- Real API -----
+
+    app.get('/similarity/:ice/:className/:context', (req, res) => {
+        const iceId = req.params['ice'];
+        const className = req.params['className'];
         const context = req.params['context'];
 
-        const items = req.params['items'].split(',');
-        const json = {};
-        json['context'] = context;
-        const relevance = {};
+        let result = {
+            'header': {
+                'status': 200
+            },
+            'response': {}// default cache TTL for cold lookup: 1s
+        };
 
-        for (let item of items) {
-            const key = context + ':' + item;
-            if (cache.has(key)) {
-                relevance[item] = cache.get(key);
-            } else {
-                relevance[item] = DEFAULT_WEIGHT;
-            }
+        const cache_key = context + ':' + className;
+        if (server_cache.has(cache_key)) {
+            result['response'] = server_cache.get(cache_key);
+            content.send('ice-display', iceId,
+                {'method': context},
+                cache_key,
+                result['response']);
+        } else {
+            content.send('similarity-lookup', iceId, className, context, cache_key);
         }
-        json['relevance'] = relevance;
-        res.json(json);
+        res.json(result);
     });
 
     // ----------V 0.1 API just for method usage ----------//
-    app.get('/:ice/:className', (req, res) => {
+    app.get('/usage/:ice/:className', (req, res) => {
         const iceId = req.params['ice'];
         const className = req.params['className'];
         const context = className;
 
-        let extension = {
-            '.expiresIn': 1,    // default cache TTL for cold lookup: 1s
+        let result = {
+            'header': {
+                'status': 200
+            },
+            'response': {}// default cache TTL for cold lookup: 1s
         };
+        if (server_cache.has(className)) {
+            result['response'] = server_cache.get(className);
 
-        if (cache.has(className)) {
-            extension = cache.get(className);
-            // TODO(exu): seam. from cache we combine context to generate extension.
             content.send('ice-display', iceId,
-                'JVM method auto-complete',
-                context,
-                extension);
+                {'method': context},
+                {'class': className},
+                result['response']);
         } else {
             content.send('ice-lookup', iceId,
                 'JVM method auto-complete',
                 className);
         }
-        res.json(extension);
+        res.json(result);
     });
 
     // The annoying favicon when we use browser to poke the end point.

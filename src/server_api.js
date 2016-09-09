@@ -1,8 +1,8 @@
 // Takes care of communication with ai.codes server.
-const http = require('http');
+const https = require('https');
 
 function getJson(url, callback) {
-    http.get(url, (response) => {
+    https.get(url, (response) => {
         let body = '';
         response.on('data', (d) => {
             body += d;
@@ -15,12 +15,12 @@ function getJson(url, callback) {
 }
 
 function fetchMethodUsage(className, callback) {
-  const url = `http://api.ai.codes/jvm/usage/${className}`;
-  getJson(url, callback);
+    const url = `https://api.ai.codes/jvm/v1/${className}`;
+    getJson(url, callback);
 }
 
-function fetchSimilarity(contextName, query, callback) {
-    const url = `http://api.ai.codes/jvm/similarity/${contextName}/${query}`;
+function fetchSimilarity(className, contextName, callback) {
+    const url = `https://api.ai.codes/jvm/v1/${className}?c=${contextName}`;
     getJson(url, callback);
 }
 
