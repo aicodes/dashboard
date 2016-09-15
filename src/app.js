@@ -47,7 +47,7 @@ ipcRenderer.on('ice-display', updateModelContextAndView);
 
 // ------------ Event listener to trigger server API requests -------------------
 
-ipcRenderer.on('similarity-lookup', (event, contextId, className, outerMethod, cache_key) => {
+ipcRenderer.on('similarity-lookup', (event, contextId, className, outerMethod, cache_key, shouldUpdateDash) => {
     fetchSimilarity(className, outerMethod, result => {
         if (result['status'] != 404) { // server has it. otherwise there is no hope to updateContext ice.
             saveToCache(cache_key, result);

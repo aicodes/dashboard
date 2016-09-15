@@ -22,16 +22,69 @@
 import express from 'express';
 
 function createExpressServer(content, server_cache) {
+
+    // Lookup cache or trigger async API to server. Returns result in cache or {}.
+    function asyncLookup(contextId, outerMethod, className, notifyDash) {
+        const typeErasedClassName = className.split('<')[0]; // Erase the generic type.
+        const cache_key = outerMethod + ':' + typeErasedClassName;
+        if (server_cache.has(cache_key)) {
+            const weights = server_cache.get(cache_key);
+            if (notifyDash) {
+                content.send('ice-display', contextId, typeErasedClassName, weights);
+            }
+            return weights;
+        } else {
+            content.send('similarity-lookup', contextId, typeErasedClassName, outerMethod, cache_key, notifyDash);
+            return {};
+        }
+    }
+
     const app = express();
 
-    // ---------- V 0.2 API ----------------
-    // ---------- For MVP, not optimized for performance
+    // ---------  Websocket-based real-time editor API
+    // ---------- for updating Intention sections as user moves carets around.-----------
+    var expressWs = require('express-ws')(app);
+    app.ws('/', (ws, req) => {
+        // Messages from caret change.
+        ws.on('message', (message) => {
+            const jsonMessage = JSON.parse(message);
+            const intention = {};
+            intention['method'] = jsonMessage['methodName'];    // from Java name convention to standard ones.
+            intention['stanza'] = jsonMessage['intentions'];
+            intention['parameters'] = jsonMessage['parameters'];
+            intention['variables'] = jsonMessage['localVariables'];
+            intention['fields'] = jsonMessage['fields'];
+            content.send('ice-update-intention', intention);
 
+            const contextId = "dummy-context";
+            // TODO: unify names from editor. They may have generics.
+            for (const variableType of intention['variables']) {
+                asyncLookup(contextId, intention['method'], variableType, false);
+            }
+
+            for (const parameterType of intention['parameters']) {
+                asyncLookup(contextId, intention['method'], parameterType, false);
+            }
+
+            for (const fieldType of intention['fields']) {
+                asyncLookup(contextId, intention['method'], fieldType, false);
+            }
+        });
+        ws.on('ping', () => {
+           ws.send('pong');
+        });
+        ws.on('open', () => {
+            console.log("channel open");
+        });
+    });
+
+    // ---------- HTTP API V 0.2 ----------------
     // TWO-IN-ONE API call. Editor gives local server a heads up.
     // In future it will split into two endpoints,
     //  1) notifying intention as the start of an auto-complete group.
     //  2) notifying potential similarity queries coming up (
     //  will be implemented as an editor event notification)
+    // Not currently used.
     app.get('/ice/:ice/:context/:items', (req, res) => {
         const iceId = req.params['ice'];
         const context = req.params['context'];
@@ -48,24 +101,6 @@ function createExpressServer(content, server_cache) {
         res.status(201).end('Request Accepted');
     });
 
-    app.get('/ping/:method_name', (req, res) => {
-        const methodName = req.params['method_name'];
-
-        console.log(methodName);
-
-        const l = methodName.split("&");
-        const keyMethod = l[0];
-        const intention = {};
-        intention['method'] = keyMethod;
-        intention['stanza'] = [];
-        for (let i = 1; i < l.length; ++i) {
-            intention['stanza'].push(l[i].split('+').join(' '));
-        }
-        content.send('ice-update-intention', intention);
-        res.status(204).end();
-    });
-
-
     // -------- Real API -----
 
     app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
@@ -77,16 +112,9 @@ function createExpressServer(content, server_cache) {
             'header': {
                 'status': 200
             },
-            'response': {}// default cache TTL for cold lookup: 1s
         };
 
-        const cache_key = outerMethod + ':' + className;
-        if (server_cache.has(cache_key)) {
-            result['response'] = server_cache.get(cache_key);
-            content.send('ice-display', contextId, className, result['response']);
-        } else {
-            content.send('similarity-lookup', contextId, className, outerMethod, cache_key);
-        }
+        result['response'] = asyncLookup(contextId, outerMethod, className, true);
         res.json(result);
     });
 
@@ -103,13 +131,29 @@ function createExpressServer(content, server_cache) {
         };
         if (server_cache.has(className)) {
             result['response'] = server_cache.get(className);
-
             content.send('ice-display', contextId, className, result['response']);
         } else {
             content.send('usage-lookup', contextId, className);
         }
         res.json(result);
     });
+
+
+    /** Deprecated API for updating method/stanza as user moves carets around.
+     app.get('/ping/:method_name', (req, res) => {
+        const methodName = req.params['method_name'];
+        const l = methodName.split("&");
+        const keyMethod = l[0];
+        const intention = {};
+        intention['method'] = keyMethod;
+        intention['stanza'] = [];
+        for (let i = 1; i < l.length; ++i) {
+            intention['stanza'].push(l[i].split('+').join(' '));
+        }
+        content.send('ice-update-intention', intention);
+        res.status(204).end();
+    });*/
+
 
     // The annoying favicon when we use browser to poke the end point.
     app.get('/favicon.ico', (req, res) => {

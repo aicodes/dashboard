@@ -13,7 +13,7 @@ import {editMenuTemplate} from './menu/edit_menu_template';
 import createWindow from './helpers/window';
 import populateClasses from './warm_up';
 import cache from './simple_cache';
-import socketio from 'socket.io';
+import ExpressWs  from 'express-ws';
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
@@ -60,20 +60,8 @@ app.on('ready', () => {
 
     const PORT = 26337;
     const express_server = createServer(content, cache);
-    const server = require('http').Server(express_server);
 
-    // TODO: use socket.io for all local communication.
-    const io = socketio.listen(server);
-    io.on('connection', function (socket) {
-        socket.on('message', message => {
-            console.log(message);
-        });
-        socket.on('disconnect', function () {
-        });
-    });
-
-
-    server.listen(PORT, () => {
+    express_server.listen(PORT, () => {
         // Callback triggered when server is successfully listening. Hurray!
         console.log('Server listening on: http://localhost:%s', PORT);
     });
