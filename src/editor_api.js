@@ -41,7 +41,7 @@ function createExpressServer(content, server_cache) {
 
     const app = express();
 
-    // ---------  Websocket-based real-time editor API
+    // ---------  Websocket API V 0.2 ------
     // ---------- for updating Intention sections as user moves carets around.-----------
     var expressWs = require('express-ws')(app);
     app.ws('/', (ws, req) => {
@@ -78,31 +78,7 @@ function createExpressServer(content, server_cache) {
         });
     });
 
-    // ---------- HTTP API V 0.2 ----------------
-    // TWO-IN-ONE API call. Editor gives local server a heads up.
-    // In future it will split into two endpoints,
-    //  1) notifying intention as the start of an auto-complete group.
-    //  2) notifying potential similarity queries coming up (
-    //  will be implemented as an editor event notification)
-    // Not currently used.
-    app.get('/ice/:ice/:context/:items', (req, res) => {
-        const iceId = req.params['ice'];
-        const context = req.params['context'];
-        const items = req.params['items'].split(',');
-
-        content.send('ice-updateContext', iceId, context);
-
-        for (let item of items) {
-            const key = context + ':' + item;
-            if (!server_cache.has(key)) {
-                content.send('relevance-lookup', context, items);
-            }
-        }
-        res.status(201).end('Request Accepted');
-    });
-
-    // -------- Real API -----
-
+    // -------- HTTP API V 0.2 --- Method Context API --------- //
     app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
         const contextId = req.params['contextId'];
         const className = req.params['className'];
@@ -118,7 +94,7 @@ function createExpressServer(content, server_cache) {
         res.json(result);
     });
 
-    // ----------V 0.1 API just for method usage ----------//
+    // ---------- HTTP API V 0.1 --- Method Usage API ----------//
     app.get('/usage/:contextId/:className', (req, res) => {
         const contextId = req.params['contextId'];
         const className = req.params['className'];
