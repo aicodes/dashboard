@@ -26,6 +26,10 @@ function createExpressServer(content, server_cache) {
     // Lookup cache or trigger async API to server. Returns result in cache or {}.
     function asyncLookup(contextId, outerMethod, className, notifyDash) {
         const typeErasedClassName = className.split('<')[0]; // Erase the generic type.
+        // Skip for now.
+        if (className.startsWith('com.fitbit.')) {
+            return {};
+        }
         const cache_key = outerMethod + ':' + typeErasedClassName;
         if (server_cache.has(cache_key)) {
             const weights = server_cache.get(cache_key);
