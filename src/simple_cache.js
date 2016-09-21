@@ -1,4 +1,4 @@
-let cache = new Map();
+const cache = new Map();
 
 export default cache;
 

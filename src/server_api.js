@@ -2,29 +2,29 @@
 const https = require('https');
 
 function getJson(url, callback) {
-    https.get(url, (response) => {
-        let body = '';
-        response.on('data', (d) => {
-            body += d;
-        });
-        response.on('end', () => {
-            const parsed = JSON.parse(body);
-            callback(parsed);
-        });
+  https.get(url, (response) => {
+    let body = '';
+    response.on('data', (d) => {
+      body += d;
     });
+    response.on('end', () => {
+      const parsed = JSON.parse(body);
+      callback(parsed);
+    });
+  });
 }
 
 function fetchMethodUsage(className, callback) {
-    const url = `https://api.ai.codes/jvm/v1/${className}`;
-    getJson(url, callback);
+  const url = `https://api.ai.codes/jvm/v1/${className}`;
+  getJson(url, callback);
 }
 
 function fetchSimilarity(className, outerMethod, callback) {
-    const url = `https://api.ai.codes/jvm/v1/${className}?c=${outerMethod}`;
-    getJson(url, callback);
+  const url = `https://api.ai.codes/jvm/v1/${className}?c=${outerMethod}`;
+  getJson(url, callback);
 }
 
 export {
-    fetchMethodUsage as fetchMethodUsage,
-    fetchSimilarity as fetchSimilarity,
+    fetchMethodUsage,
+    fetchSimilarity,
 };

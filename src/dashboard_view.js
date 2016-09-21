@@ -1,37 +1,37 @@
 // The View object for ICE. Responsible for rendering ICE in dashboard.
 
 function update(iceModel) {
-    const welcomeDiv = document.getElementById('welcome-div');
-    if (welcomeDiv != null) {
-        welcomeDiv.outerHTML = '';
-    }
-    document.getElementById('ice-body').style.display = 'block';
+  const welcomeDiv = document.getElementById('welcome-div');
+  if (welcomeDiv != null) {
+    welcomeDiv.outerHTML = '';
+  }
+  document.getElementById('ice-body').style.display = 'block';
 
-    const intentionNode = document.getElementById('intention');
-    const contextNode = document.getElementById('context');
-    const extensionNode = document.getElementById('extension');
-    while (intentionNode.firstChild) {
-        intentionNode.removeChild(intentionNode.firstChild);
-    }
-    while (contextNode.firstChild) {
-        contextNode.removeChild(contextNode.firstChild);
-    }
-    while (extensionNode.firstChild) {
-        extensionNode.removeChild(extensionNode.firstChild);
-    }
+  const intentionNode = document.getElementById('intention');
+  const contextNode = document.getElementById('context');
+  const extensionNode = document.getElementById('extension');
+  while (intentionNode.firstChild) {
+    intentionNode.removeChild(intentionNode.firstChild);
+  }
+  while (contextNode.firstChild) {
+    contextNode.removeChild(contextNode.firstChild);
+  }
+  while (extensionNode.firstChild) {
+    extensionNode.removeChild(extensionNode.firstChild);
+  }
 
-    intentionNode.appendChild(document.createTextNode(
+  intentionNode.appendChild(document.createTextNode(
         JSON.stringify(iceModel.intention, null, 2)));
-    for (const item of iceModel.context) {
-        contextNode.appendChild(document.createTextNode(`${item}\n`));
-    }
-    for (const item of iceModel.extension) {
-        extensionNode.appendChild(
+  for (const item of iceModel.context) {
+    contextNode.appendChild(document.createTextNode(`${item}\n`));
+  }
+  for (const item of iceModel.extension) {
+    extensionNode.appendChild(
             document.createElement('PRE').appendChild(
                 document.createElement('CODE').appendChild(
                     document.createTextNode(
                         `${JSON.stringify(item, null, 2)}\n`))));
-    }
+  }
 }
 
 

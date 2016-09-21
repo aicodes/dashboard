@@ -1,15 +1,15 @@
-import {ipcRenderer} from 'electron'; // native electron module
-import {iceModel} from './ice_model';
+import { ipcRenderer } from 'electron'; // native electron module
+import { iceModel } from './ice_model';
 import updateView from './dashboard_view';
-import {fetchMethodUsage, fetchSimilarity} from './server_api';
+import { fetchMethodUsage, fetchSimilarity } from './server_api';
 
 
 function updateModelContextAndView(error, contextId, context, extension) {
     // Update Model object.
-    iceModel.updateContext(contextId, context, extension);
+  iceModel.updateContext(contextId, context, extension);
 
     // Update view
-    updateView(iceModel); // updateContext the MD view.
+  updateView(iceModel); // updateContext the MD view.
 }
 
 // Sometimes methods from java.lang.Objects dominates the weight.
@@ -23,23 +23,23 @@ const javaLangObject = 'java.lang.Object';
  * is owned by the main process.
  */
 function saveToCache(key, value) {
-    const new_value = value;
-    if (key.includes(javaLangObject)) { // discount java.lang.Object
-        for (const k in value) {
-            if ({}.hasOwnProperty.call(value, k)) {
-                new_value[k] = javaLangObjectDiscount * value[k];
-            }
-        }
+  const new_value = value;
+  if (key.includes(javaLangObject)) { // discount java.lang.Object
+    for (const k in value) {
+      if ({}.hasOwnProperty.call(value, k)) {
+        new_value[k] = javaLangObjectDiscount * value[k];
+      }
     }
-    ipcRenderer.send('ice-cache', key, new_value);
+  }
+  ipcRenderer.send('ice-cache', key, new_value);
 }
 
 // Key method for managing ICE model.
 ipcRenderer.on('ice-update-intention', (event, intention) => {
-    let result = iceModel.updateIntention(intention);
-    if (result) {
-        updateView(iceModel);
-    }
+  const result = iceModel.updateIntention(intention);
+  if (result) {
+    updateView(iceModel);
+  }
 });
 
 
@@ -48,21 +48,21 @@ ipcRenderer.on('ice-display', updateModelContextAndView);
 // ------------ Event listener to trigger server API requests -------------------
 
 ipcRenderer.on('similarity-lookup', (event, contextId, className, outerMethod, cache_key, shouldUpdateDash) => {
-    fetchSimilarity(className, outerMethod, result => {
-        if (result['status'] != 404) { // server has it. otherwise there is no hope to updateContext ice.
-            saveToCache(cache_key, result);
-            updateModelContextAndView(null, contextId, className, result);
-        }
-    });
+  fetchSimilarity(className, outerMethod, result => {
+    if (result['status'] != 404) { // server has it. otherwise there is no hope to updateContext ice.
+      saveToCache(cache_key, result);
+      updateModelContextAndView(null, contextId, className, result);
+    }
+  });
 });
 
 ipcRenderer.on('usage-lookup', (event, contextId, className) => {
-    fetchMethodUsage(className, results => {
-        if (results['status'] != 404) {
-            saveToCache(className, results);
-            updateModelContextAndView(null, contextId, className, results);
-        }
-    });
+  fetchMethodUsage(className, results => {
+    if (results['status'] != 404) {
+      saveToCache(className, results);
+      updateModelContextAndView(null, contextId, className, results);
+    }
+  });
 });
 
 

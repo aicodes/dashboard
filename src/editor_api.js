@@ -24,151 +24,150 @@ import express from 'express';
 const elasticsearch = require('elasticsearch');
 
 const esclient = new elasticsearch.Client({
-    host: 'search.ai.codes:9200',
-    log: 'trace'
+  host: 'search.ai.codes:9200',
+  log: 'trace',
 });
 
 function createExpressServer(content, server_cache) {
-
     // Lookup cache or trigger async API to server. Returns result in cache or {}.
-    function asyncLookup(contextId, outerMethod, className, notifyDash) {
-        const typeErasedClassName = className.split('<')[0]; // Erase the generic type.
+  function asyncLookup(contextId, outerMethod, className, notifyDash) {
+    const typeErasedClassName = className.split('<')[0]; // Erase the generic type.
         // Skip for now.
-        if (className.startsWith('com.fitbit.')) {
-            return {};
-        }
-        const cache_key = outerMethod + ':' + typeErasedClassName;
-        if (server_cache.has(cache_key)) {
-            const weights = server_cache.get(cache_key);
-            if (notifyDash) {
-                content.send('ice-display', contextId, typeErasedClassName, weights);
-            }
-            return weights;
-        } else {
-            content.send('similarity-lookup', contextId, typeErasedClassName, outerMethod, cache_key, notifyDash);
-            return {};
-        }
+    if (className.startsWith('com.fitbit.')) {
+      return {};
     }
+    const cache_key = outerMethod + ':' + typeErasedClassName;
+    if (server_cache.has(cache_key)) {
+      const weights = server_cache.get(cache_key);
+      if (notifyDash) {
+        content.send('ice-display', contextId, typeErasedClassName, weights);
+      }
+      return weights;
+    } else {
+      content.send('similarity-lookup', contextId, typeErasedClassName, outerMethod, cache_key, notifyDash);
+      return {};
+    }
+  }
 
-    const app = express();
+  const app = express();
 
     // ---------  Websocket API V 0.2 ------
     // ---------- for updating Intention sections as user moves carets around.-----------
-    var expressWs = require('express-ws')(app);
-    app.ws('/', (ws, req) => {
+  const expressWs = require('express-ws')(app);
+  app.ws('/', (ws, req) => {
         // Messages from caret change.
-        ws.on('message', (message) => {
-            const jsonMessage = JSON.parse(message);
-            const intention = {};
-            intention['method'] = jsonMessage['methodName'];    // from Java name convention to standard ones.
-            intention['stanza'] = jsonMessage['intentions'];
-            intention['parameters'] = jsonMessage['parameters'];
-            intention['variables'] = jsonMessage['localVariables'];
-            intention['fields'] = jsonMessage['fields'];
-            content.send('ice-update-intention', intention);
+    ws.on('message', (message) => {
+      const jsonMessage = JSON.parse(message);
+      const intention = {};
+      intention['method'] = jsonMessage['methodName'];    // from Java name convention to standard ones.
+      intention['stanza'] = jsonMessage['intentions'];
+      intention['parameters'] = jsonMessage['parameters'];
+      intention['variables'] = jsonMessage['localVariables'];
+      intention['fields'] = jsonMessage['fields'];
+      content.send('ice-update-intention', intention);
 
-            const contextId = "dummy-context";
+      const contextId = 'dummy-context';
             // TODO: unify names from editor. They may have generics.
-            for (const variableType of intention['variables']) {
-                asyncLookup(contextId, intention['method'], variableType, false);
-            }
+      for (const variableType of intention['variables']) {
+        asyncLookup(contextId, intention['method'], variableType, false);
+      }
 
-            for (const parameterType of intention['parameters']) {
-                asyncLookup(contextId, intention['method'], parameterType, false);
-            }
+      for (const parameterType of intention['parameters']) {
+        asyncLookup(contextId, intention['method'], parameterType, false);
+      }
 
-            for (const fieldType of intention['fields']) {
-                asyncLookup(contextId, intention['method'], fieldType, false);
-            }
-        });
-        ws.on('ping', () => {
-           ws.send('pong');
-        });
-        ws.on('open', () => {
-            console.log("channel open");
-        });
+      for (const fieldType of intention['fields']) {
+        asyncLookup(contextId, intention['method'], fieldType, false);
+      }
     });
+    ws.on('ping', () => {
+      ws.send('pong');
+    });
+    ws.on('open', () => {
+      console.log('channel open');
+    });
+  });
 
 
     // HTTP endpoints.
 
     //  Smart snippet lookup.
-    app.get('/snippet/:intention', (req, res) => {
-        let result = {
-            'header': {
-                'status': 200
-            },
-        };
+  app.get('/snippet/:intention', (req, res) => {
+    const result = {
+      'header': {
+        'status': 200,
+      },
+    };
 
-        const intention = req.params['intention'];
-        esclient.search({
-            index: 'so',
-            type: 'curated',
-            body: {
-                query: {
-                    match_phrase: {
-                        title:{
-                            query: intention,
-                            slop: 1
-                        }
-                    }
-                }
-            }
-        }).then(function (resp) {
-            if (resp.hits.total < 1) {
-                result['response'] = {};
-                res.json(result);
-            } else {
-                const snippets = [];
-                for (let result of resp.hits.hits) {
-                    console.log(result);
-                    snippets.push(result._source.curated_answer);
-                }
-                result['snippets'] = snippets;
-                res.json(result);
-            }
-        }, function (err) {
-            console.trace(err.message);
-            result['response'] = err.message;
-            res.json(result);
-        });
+    const intention = req.params['intention'];
+    esclient.search({
+      index: 'so',
+      type: 'curated',
+      body: {
+        query: {
+          match_phrase: {
+            title: {
+              query: intention,
+              slop: 1,
+            },
+          },
+        },
+      },
+    }).then(function (resp) {
+      if (resp.hits.total < 1) {
+        result['response'] = {};
+        res.json(result);
+      } else {
+        const snippets = [];
+        for (const result of resp.hits.hits) {
+          console.log(result);
+          snippets.push(result._source.curated_answer);
+        }
+        result['snippets'] = snippets;
+        res.json(result);
+      }
+    }, function (err) {
+      console.trace(err.message);
+      result['response'] = err.message;
+      res.json(result);
     });
+  });
 
     //  Method Context Similarity //
-    app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
-        const contextId = req.params['contextId'];
-        const className = req.params['className'];
-        const outerMethod = req.params['outerMethod'];
+  app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
+    const contextId = req.params['contextId'];
+    const className = req.params['className'];
+    const outerMethod = req.params['outerMethod'];
 
-        let result = {
-            'header': {
-                'status': 200
-            },
-        };
+    const result = {
+      'header': {
+        'status': 200,
+      },
+    };
 
-        result['response'] = asyncLookup(contextId, outerMethod, className, true);
-        res.json(result);
-    });
+    result['response'] = asyncLookup(contextId, outerMethod, className, true);
+    res.json(result);
+  });
 
     // Method Usage Stats //
-    app.get('/usage/:contextId/:className', (req, res) => {
-        const contextId = req.params['contextId'];
-        const className = req.params['className'];
+  app.get('/usage/:contextId/:className', (req, res) => {
+    const contextId = req.params['contextId'];
+    const className = req.params['className'];
 
-        let result = {
-            'header': {
-                'status': 200
-            },
-            'response': {}// default cache TTL for cold lookup: 1s
-        };
-        if (server_cache.has(className)) {
-            result['response'] = server_cache.get(className);
-            content.send('ice-display', contextId, className, result['response']);
-        } else {
-            content.send('usage-lookup', contextId, className);
-        }
-        res.json(result);
-    });
+    const result = {
+      'header': {
+        'status': 200,
+      },
+      'response': {}, // default cache TTL for cold lookup: 1s
+    };
+    if (server_cache.has(className)) {
+      result['response'] = server_cache.get(className);
+      content.send('ice-display', contextId, className, result['response']);
+    } else {
+      content.send('usage-lookup', contextId, className);
+    }
+    res.json(result);
+  });
 
 
     /** Deprecated API for updating method/stanza as user moves carets around.
@@ -188,11 +187,11 @@ function createExpressServer(content, server_cache) {
 
 
     // The annoying favicon when we use browser to poke the end point.
-    app.get('/favicon.ico', (req, res) => {
-        res.end('');
-    });
+  app.get('/favicon.ico', (req, res) => {
+    res.end('');
+  });
 
-    return app;
+  return app;
 }
 
 export default createExpressServer;
