@@ -21,6 +21,13 @@
 
 import express from 'express';
 
+const elasticsearch = require('elasticsearch');
+
+const esclient = new elasticsearch.Client({
+    host: 'search.ai.codes:9200',
+    log: 'trace'
+});
+
 function createExpressServer(content, server_cache) {
 
     // Lookup cache or trigger async API to server. Returns result in cache or {}.
@@ -82,7 +89,52 @@ function createExpressServer(content, server_cache) {
         });
     });
 
-    // -------- HTTP API V 0.2 --- Method Context API --------- //
+
+    // HTTP endpoints.
+
+    //  Smart snippet lookup.
+    app.get('/snippet/:intention', (req, res) => {
+        let result = {
+            'header': {
+                'status': 200
+            },
+        };
+
+        const intention = req.params['intention'];
+        esclient.search({
+            index: 'so',
+            type: 'curated',
+            body: {
+                query: {
+                    match_phrase: {
+                        title:{
+                            query: intention,
+                            slop: 1
+                        }
+                    }
+                }
+            }
+        }).then(function (resp) {
+            if (resp.hits.total < 1) {
+                result['response'] = {};
+                res.json(result);
+            } else {
+                const snippets = [];
+                for (let result of resp.hits.hits) {
+                    console.log(result);
+                    snippets.push(result._source.curated_answer);
+                }
+                result['snippets'] = snippets;
+                res.json(result);
+            }
+        }, function (err) {
+            console.trace(err.message);
+            result['response'] = err.message;
+            res.json(result);
+        });
+    });
+
+    //  Method Context Similarity //
     app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
         const contextId = req.params['contextId'];
         const className = req.params['className'];
@@ -98,7 +150,7 @@ function createExpressServer(content, server_cache) {
         res.json(result);
     });
 
-    // ---------- HTTP API V 0.1 --- Method Usage API ----------//
+    // Method Usage Stats //
     app.get('/usage/:contextId/:className', (req, res) => {
         const contextId = req.params['contextId'];
         const className = req.params['className'];
