@@ -1,21 +1,24 @@
-Forked from Electron boilerplate. Major features:
+AI.codes dashboard
+-----------------------
 
-* The app will start a local HTTP server, listening to localhost:26337 in the main thread.
-* When there is a request, it checks local cache. If no entries found, forward the request to api.ai.codes
-* To help debugging etc, the render process (user's main window) would also display users Intention, Context and the Extension (our suggestions) on the dashboard.
+AI.codes dashboard is an Electron app. It provides insightful information as developers code.
 
-A few technical notes.
+### Core Pieces
 
-# You can and should use es6 (latest Javascript standard) for the code base.
-# There is no need to use babel or other transcompiler because Electron, built on Chromium + Nodejs, supports ES6.
-# We impose "use strict"; on code so errors on undeclared variables can be caught (mostly because of typo).
-# To run the dashboard for debugging, use
-	npm run start
-The app listens on localhost:26337 
+* The app will start a local HTTP/WebSocket server, listening to localhost:26337 in the main thread.
+* For good user experience, most of HTTP requests from editor return immediately. If no answers can be found by checking local cache, the request is forwarded to api.ai.codes.
+* The WebSocket endpoint receives stream of events from editors.
 
-Things that works:
+### Technical notes
+
+* You can and should use ES6 (latest Javascript standard) code style. The app is configured to understand ES6 under `src`. The lint tool helps preventing a lot of bugs. To run lint, use `eslint --fix src`.
+* To run the dashboard, use `npm run start`. The app listens on localhost:26337.
+* The local server is implemented using expressjs framework. Most of the code is in `editor_api.js`.
+
+
+
+### Editor APIs
 
 * Snippet search: http://localhost:26337/snippet/string+to+int	(Synchronized API)
 * Global Java class usage: http://localhost:26337/usage/1/java.lang.String  (Async API. may need to refresh the page if requested from Chrome)
 * Global Java method/context similarity: http://localhost:26337/similarity/2/java.util.Map/remove (Async API may need to refresh if requested from Chrome)
-
