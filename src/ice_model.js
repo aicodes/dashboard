@@ -9,7 +9,7 @@ class IceModel {
   constructor() {
     this.intention = {};
 
-    this.context_id = -1;
+    this.contextId = -1;
     this.context = new Set();
     this.extension = [];
   }
@@ -24,11 +24,11 @@ class IceModel {
     return true;
   }
 
-  updateContext(context_id, contextString, extension) {
-    if (this.context_id != context_id) {
+  updateContext(contextId, contextString, extension) {
+    if (this.contextId !== contextId) {
       this.context.clear();
       this.extension.length = 0;
-      this.context_id = context_id;
+      this.contextId = contextId;
     }
     if (!this.context.has(contextString)) {
       this.context.add(contextString);

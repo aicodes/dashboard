@@ -13,9 +13,7 @@ AI.codes dashboard is an Electron app. It provides insightful information as dev
 
 * You can and should use ES6 (latest Javascript standard) code style. The app is configured to understand ES6 under `src`. The lint tool helps preventing a lot of bugs. To run lint, use `eslint --fix src`.
 * To run the dashboard, use `npm run start`. The app listens on localhost:26337.
-* The local server is implemented using expressjs framework. Most of the code is in `editor_api.js`.
-
-
+* The local server is implemented using express.js framework. Most of the code is in `editor_api.js`.
 
 ### Editor APIs
 

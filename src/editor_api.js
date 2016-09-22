@@ -13,10 +13,11 @@
  * 2. Request:
  *          GET    /similarity/<ice_id>/<context-string>/ClassName
  *    Response:
- *          key value JSON object. Key is the method name (short), value is the similarity to the context name.
+ *          key value JSON object. Key is the method name (short),
+ *          value is the similarity to the context name.
  *
- * Both types of requests are "async", meaning if local server does not have it, it would immediately return
- * HTTP 202 Accepted. Clients are responsible to query the API again later.
+ * Both types of requests are "async", meaning if local server does not have it, it would
+ * immediately return HTTP 202 Accepted. Clients are responsible to query the API again later.
  */
 
 import express from 'express';
@@ -28,7 +29,7 @@ const esclient = new elasticsearch.Client({
   log: 'trace',
 });
 
-function createExpressServer(content, server_cache) {
+function createExpressServer(content, serverCache) {
     // Lookup cache or trigger async API to server. Returns result in cache or {}.
   function asyncLookup(contextId, outerMethod, className, notifyDash) {
     const typeErasedClassName = className.split('<')[0]; // Erase the generic type.
@@ -36,15 +37,15 @@ function createExpressServer(content, server_cache) {
     if (className.startsWith('com.fitbit.')) {
       return {};
     }
-    const cache_key = outerMethod + ':' + typeErasedClassName;
-    if (server_cache.has(cache_key)) {
-      const weights = server_cache.get(cache_key);
+    const cacheKey = outerMethod + ':' + typeErasedClassName;
+    if (serverCache.has(cacheKey)) {
+      const weights = serverCache.get(cacheKey);
       if (notifyDash) {
         content.send('ice-display', contextId, typeErasedClassName, weights);
       }
       return weights;
     } else {
-      content.send('similarity-lookup', contextId, typeErasedClassName, outerMethod, cache_key, notifyDash);
+      content.send('similarity-lookup', contextId, typeErasedClassName, outerMethod, cacheKey, notifyDash);
       return {};
     }
   }
@@ -59,25 +60,24 @@ function createExpressServer(content, server_cache) {
     ws.on('message', (message) => {
       const jsonMessage = JSON.parse(message);
       const intention = {};
-      intention['method'] = jsonMessage['methodName'];    // from Java name convention to standard ones.
-      intention['stanza'] = jsonMessage['intentions'];
-      intention['parameters'] = jsonMessage['parameters'];
-      intention['variables'] = jsonMessage['localVariables'];
-      intention['fields'] = jsonMessage['fields'];
+      intention.method = jsonMessage.methodName;
+      intention.stanza = jsonMessage.intentions;
+      intention.parameters = jsonMessage.parameters;
+      intention.variables = jsonMessage.localVariables;
+      intention.fields = jsonMessage.fields;
       content.send('ice-update-intention', intention);
 
       const contextId = 'dummy-context';
-            // TODO: unify names from editor. They may have generics.
-      for (const variableType of intention['variables']) {
-        asyncLookup(contextId, intention['method'], variableType, false);
+      for (const variableType of intention.variables) {
+        asyncLookup(contextId, intention.method, variableType, false);
       }
 
-      for (const parameterType of intention['parameters']) {
-        asyncLookup(contextId, intention['method'], parameterType, false);
+      for (const parameterType of intention.parameters) {
+        asyncLookup(contextId, intention.method, parameterType, false);
       }
 
-      for (const fieldType of intention['fields']) {
-        asyncLookup(contextId, intention['method'], fieldType, false);
+      for (const fieldType of intention.fields) {
+        asyncLookup(contextId, intention.method, fieldType, false);
       }
     });
     ws.on('ping', () => {
@@ -160,8 +160,8 @@ function createExpressServer(content, server_cache) {
       },
       'response': {}, // default cache TTL for cold lookup: 1s
     };
-    if (server_cache.has(className)) {
-      result['response'] = server_cache.get(className);
+    if (serverCache.has(className)) {
+      result['response'] = serverCache.get(className);
       content.send('ice-display', contextId, className, result['response']);
     } else {
       content.send('usage-lookup', contextId, className);
