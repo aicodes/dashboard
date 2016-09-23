@@ -101,12 +101,12 @@ function createExpressServer(content, serverCache) {
 
     const intention = req.params['intention'];
     esclient.search({
-      index: 'so',
-      type: 'curated',
+      index: 'java_v4',
+      type: 'snippet',
       body: {
         query: {
           match_phrase: {
-            title: {
+            intent: {
               query: intention,
               slop: 1,
             },
@@ -121,7 +121,7 @@ function createExpressServer(content, serverCache) {
         const snippets = [];
         for (const result of resp.hits.hits) {
           console.log(result);
-          snippets.push(result._source.curated_answer);
+          snippets.push(result._source.snippet);
         }
         result['snippets'] = snippets;
         res.json(result);
