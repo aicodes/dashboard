@@ -23,6 +23,7 @@ import createServer from './editor_api';
 
 const setApplicationMenu = function setApplicationMenu() {
   const menus = [editMenuTemplate];
+
   if (env.name !== 'production') {
     menus.push(devMenuTemplate);
   }
@@ -48,12 +49,12 @@ app.on('ready', () => {
   mainWindow.loadURL('file://' + __dirname + '/app.html');
   const content = mainWindow.webContents;
 
+    /*
   if (env.name === 'development') {
     mainWindow.openDevTools();
-  }
-
-    // ==== Starts a local Ai.codes server ========
-    // Pre-populating a bunch of frequently used classes.
+  }*/
+  // ==== Starts a local Ai.codes server ========
+  // Pre-populating a bunch of frequently used classes.
   content.on('did-finish-load', () => {
     populateClasses(content);
   });

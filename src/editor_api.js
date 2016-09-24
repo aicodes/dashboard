@@ -101,7 +101,7 @@ function createExpressServer(content, serverCache) {
 
     const intention = req.params['intention'];
     esclient.search({
-      index: 'java_v4',
+      index: 'java_v5',
       type: 'snippet',
       body: {
         query: {

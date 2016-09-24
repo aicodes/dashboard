@@ -65,7 +65,6 @@ ipcRenderer.on('usage-lookup', (event, contextId, className) => {
   });
 });
 
-
 // ------- Pre-populating key metrics --------------
 /*
 ipcRenderer.on('fetch-method-usage-quiet', (event, className) => {

@@ -1,0 +1,90 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="utf-8">
+    <title>AI.codes Dashboard</title>
+    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Roboto" rel="stylesheet">
+    <link href="stylesheets/main.css" rel="stylesheet" type="text/css">
+    <link href="stylesheets/github-markdown.css" rel="stylesheet" >
+    <style>
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+        }
+        textarea {
+            font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 12px;
+        }
+        .submit {
+            background-color:#18ab29;
+            -moz-border-radius:14px;
+            border-radius:14px;
+            border:1px solid #18ab29;
+            display:inline-block;
+            cursor:pointer;
+            color:#ffffff;
+            font-size:12px;
+            padding:13px 25px;
+        }
+    </style>
+    <script>
+        const Config = require('electron-config');
+        const config = new Config();
+
+        function save_config() {
+            console.log("Save config");
+            const c = document.getElementById("config").value;
+            config.set('rules', JSON.parse(c));
+            document.getElementById("button").innerHTML="Saved";
+        }
+
+        function load_config() {
+            document.getElementById("config").value = JSON.stringify(config.get('rules'), null, '  ');
+        }
+
+        function change_submit_button() {
+            document.getElementById("button").innerHTML="Submit";
+        }
+
+        window.onload = function() {
+            load_config();
+        }
+    </script>
+</head>
+<body >
+
+<article class="markdown-body">
+    <h2> </h2>
+<h2> Preferences </h2>
+    <h3>Privacy</h3>
+  <blockquote>
+      As fellow software engineers, we deeply understand your concern on privacy.
+      AI.codes will <b>NEVER</b> transmit any code to our server.
+
+      <br/>
+      <br/>
+      We infer your intention only based on <em>class and method</em> names, and your intention lines start with <em>///</em>.
+  </blockquote>
+
+
+<h6>You can add additional <b>incognito</b> class rules here. You can use </h6>
+    <ul>
+        <li>
+            fully qualified name, e.g. <code>com.skunkworks.Secret</code>; or
+        </li>
+        <li>
+            regex, e.g. <code>com.skunkworks.secret.*</code>.
+        </li>
+    </ul>
+    <textarea cols=70 rows=20 id="config"  title="Incognito Classes" oninput="change_submit_button();"></textarea>
+    <br/>
+    <button id="button" class="submit" onclick="save_config();">Submit</button>
+</article>
+</body>
+
+</html>
+
+
