@@ -5,7 +5,7 @@
     <title>AI.codes Dashboard</title>
     <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Roboto" rel="stylesheet">
     <link href="stylesheets/main.css" rel="stylesheet" type="text/css">
-    <link href="stylesheets/github-markdown.css" rel="stylesheet" >
+    <link href="stylesheets/github-markdown.css" rel="stylesheet">
     <style>
         .markdown-body {
             box-sizing: border-box;
@@ -14,63 +14,72 @@
             margin: 0 auto;
             padding: 45px;
         }
+
         textarea {
             font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
             font-size: 12px;
         }
+
         .submit {
-            background-color:#18ab29;
-            -moz-border-radius:14px;
-            border-radius:14px;
-            border:1px solid #18ab29;
-            display:inline-block;
-            cursor:pointer;
-            color:#ffffff;
-            font-size:12px;
-            padding:13px 25px;
+            background-color: #18ab29;
+            -moz-border-radius: 14px;
+            border-radius: 14px;
+            border: 1px solid #18ab29;
+            display: inline-block;
+            cursor: pointer;
+            color: #ffffff;
+            font-size: 12px;
+            padding: 13px 25px;
         }
     </style>
     <script>
-        const Config = require('electron-config');
-        const config = new Config();
+        // TODO: platform/background.js should own settings.
+        const {ipcRenderer} = require('electron');
 
-        function save_config() {
+        function load_preference() {
+            ipcRenderer.send('load-preference');
+        }
+
+        // Pass update to main process to update config.
+        function save_preference() {
             console.log("Save config");
-            const c = document.getElementById("config").value;
-            config.set('rules', JSON.parse(c));
-            document.getElementById("button").innerHTML="Saved";
+            const preference = JSON.parse(document.getElementById("config").value);
+            ipcRenderer.send('save-preference', preference);
+            document.getElementById("button").innerHTML = "Saved";
         }
 
-        function load_config() {
-            document.getElementById("config").value = JSON.stringify(config.get('rules'), null, '  ');
+        // Update textarea when preference is changed.
+        ipcRenderer.on('update-preference-display', (event, preference) => {
+            document.getElementById("config").value = JSON.stringify(preference, null, '  ');
+        });
+
+        // Intuitive UI
+        function update_button() {
+            document.getElementById("button").innerHTML = "Submit";
         }
 
-        function change_submit_button() {
-            document.getElementById("button").innerHTML="Submit";
-        }
-
-        window.onload = function() {
-            load_config();
+        window.onload = function () {
+            load_preference();
         }
     </script>
 </head>
-<body >
+<body>
 
 <article class="markdown-body">
-    <h2> </h2>
-<h2> Preferences </h2>
+    <h2></h2>
+    <h2> Preferences </h2>
     <h3>Privacy</h3>
-  <blockquote>
-      As fellow software engineers, we deeply understand your concern on privacy.
-      AI.codes will <b>NEVER</b> transmit any code to our server.
+    <blockquote>
+        As fellow software engineers, we deeply understand your concern on privacy.
+        AI.codes will <b>NEVER</b> transmit any code to our server.
 
-      <br/>
-      <br/>
-      We infer your intention only based on <em>class and method</em> names, and your intention lines start with <em>///</em>.
-  </blockquote>
+        <br/>
+        <br/>
+        We infer your intention only based on <em>class and method</em> names, and your intention lines start with <em>///</em>.
+    </blockquote>
 
 
-<h6>You can add additional <b>incognito</b> class rules here. You can use </h6>
+    <h6>You can add additional <b>incognito</b> class rules here. You can use </h6>
     <ul>
         <li>
             fully qualified name, e.g. <code>com.skunkworks.Secret</code>; or
@@ -79,9 +88,9 @@
             regex, e.g. <code>com.skunkworks.secret.*</code>.
         </li>
     </ul>
-    <textarea cols=70 rows=20 id="config"  title="Incognito Classes" oninput="change_submit_button();"></textarea>
+    <textarea cols=70 rows=20 id="config" title="Incognito Classes" oninput="update_button();"></textarea>
     <br/>
-    <button id="button" class="submit" onclick="save_config();">Submit</button>
+    <button id="button" class="submit" onclick="save_preference();">Submit</button>
 </article>
 </body>
 

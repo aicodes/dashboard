@@ -7,9 +7,9 @@
 // The proper way to do IPC is through ipcMain and ipcRender.
 // This process is `ipcMain`.
 
-import { app, Menu, ipcMain } from 'electron';
-import { devMenuTemplate } from './menu/dev_menu_template';
-import { editMenuTemplate } from './menu/edit_menu_template';
+import {app, Menu, ipcMain} from 'electron';
+import {devMenuTemplate} from './menu/dev_menu_template';
+import {editMenuTemplate} from './menu/edit_menu_template';
 import createWindow from './helpers/window';
 import populateClasses from './warm_up';
 import cache from './simple_cache';
@@ -20,64 +20,99 @@ import ExpressWs from 'express-ws';
 import env from './env';
 import createServer from './editor_api';
 
+const Config = require('electron-config');
+const config = new Config();
+let preferences = config.get('preferences');
 
 const setApplicationMenu = function setApplicationMenu() {
-  const menus = [editMenuTemplate];
+    const menus = [editMenuTemplate];
 
-  if (env.name !== 'production') {
-    menus.push(devMenuTemplate);
-  }
-  Menu.setApplicationMenu(Menu.buildFromTemplate(menus));
+    if (env.name !== 'production') {
+        menus.push(devMenuTemplate);
+    }
+    Menu.setApplicationMenu(Menu.buildFromTemplate(menus));
 };
 
 // Save userData in separate folders for each environment.
 // Thanks to this you can use production and development versions of the app
 // on same machine like those are two separate apps.
 if (env.name !== 'production') {
-  const userDataPath = app.getPath('userData');
-  app.setPath('userData', `${userDataPath} (${env.name})`);
+    const userDataPath = app.getPath('userData');
+    app.setPath('userData', `${userDataPath} (${env.name})`);
 }
 
+
 app.on('ready', () => {
-  setApplicationMenu();
+    setApplicationMenu();
 
-  const mainWindow = createWindow('main', {
-    width: 500,
-    height: 800,
-  });
+    const mainWindow = createWindow('main', {
+        width: 500,
+        height: 800,
+    });
 
-  mainWindow.loadURL('file://' + __dirname + '/app.html');
-  const content = mainWindow.webContents;
+    mainWindow.loadURL('file://' + __dirname + '/app.html');
+    const content = mainWindow.webContents;
 
     /*
-  if (env.name === 'development') {
-    mainWindow.openDevTools();
-  }*/
-  // ==== Starts a local Ai.codes server ========
-  // Pre-populating a bunch of frequently used classes.
-  content.on('did-finish-load', () => {
-    populateClasses(content);
-  });
+     if (env.name === 'development') {
+     mainWindow.openDevTools();
+     }*/
+    // ==== Starts a local Ai.codes server ========
+    // Pre-populating a bunch of frequently used classes.
+    content.on('did-finish-load', () => {
+        populateClasses(content);
+    });
 
-  const PORT = 26337;
-  const express_server = createServer(content, cache);
+    const PORT = 26337;
+    const express_server = createServer(content, cache, isIncognitoClass);
 
-  express_server.listen(PORT, () => {
+    express_server.listen(PORT, () => {
         // Callback triggered when server is successfully listening. Hurray!
-    console.log('Server listening on: http://localhost:%s', PORT);
-  });
+        console.log('Server listening on: http://localhost:%s', PORT);
+    });
     // ====== ai.codes code ends =========
 });
 
 app.on('window-all-closed', () => {
-  app.quit();
+    app.quit();
 });
 
 app.on('will-quit', () => {
-  app.quit();
+    app.quit();
 });
 
 // Store the class -> extension (JSON object) mapping to cache.
 ipcMain.on('ice-cache', (event, className, extension) => {
-  cache.set(className, extension);
+    cache.set(className, extension);
 });
+
+// Preferences
+ipcMain.on('load-preference', (event) => {
+    const result = config.get("preferences");
+    if (result === undefined) {
+        config.set('preferences', {'incognito': []});
+    }
+    event.sender.send('update-preference-display', config.get('preferences'));
+});
+
+ipcMain.on('save-preference', (event, updated_preferences) => {
+    preferences = updated_preferences;
+    config.set('preferences', updated_preferences);
+});
+
+function isIncognitoClass(className) {
+    /// Skip incognito classes
+    if (preferences === undefined || preferences['incognito'] === undefined) {
+        return false;
+    }
+    const incognitoRules = preferences['incognito'];
+    for (let rule of incognitoRules) {
+        if (className === rule) {
+            return true;
+        }
+        if (className.search(rule) != -1) {
+            return true;
+        }
+    }
+    return false;
+}

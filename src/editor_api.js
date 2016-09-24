@@ -23,18 +23,16 @@
 import express from 'express';
 
 const elasticsearch = require('elasticsearch');
-
 const esclient = new elasticsearch.Client({
   host: 'search.ai.codes:9200',
   log: 'trace',
 });
 
-function createExpressServer(content, serverCache) {
+function createExpressServer(content, serverCache, isIncognitoClass) {
     // Lookup cache or trigger async API to server. Returns result in cache or {}.
   function asyncLookup(contextId, outerMethod, className, notifyDash) {
     const typeErasedClassName = className.split('<')[0]; // Erase the generic type.
-        // Skip for now.
-    if (className.startsWith('com.fitbit.')) {
+    if (isIncognitoClass(className)) {
       return {};
     }
     const cacheKey = outerMethod + ':' + typeErasedClassName;
