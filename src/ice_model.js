@@ -18,6 +18,7 @@ class IceModel {
     if (JSON.stringify(this.intention) === JSON.stringify(intention)) {
       return false;
     }
+
     this.intention = intention;
     this.context.clear();
     this.extension.length = 0;
@@ -30,6 +31,7 @@ class IceModel {
       this.extension.length = 0;
       this.contextId = contextId;
     }
+
     if (!this.context.has(contextString)) {
       this.context.add(contextString);
       const newExtension = {};

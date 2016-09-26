@@ -3,12 +3,11 @@ import { iceModel } from './ice_model';
 import updateView from './dashboard_view';
 import { fetchMethodUsage, fetchSimilarity } from './server_api';
 
-
 function updateModelContextAndView(error, contextId, context, extension) {
-    // Update Model object.
+  // Update Model object.
   iceModel.updateContext(contextId, context, extension);
 
-    // Update view
+  // Update view
   updateView(iceModel); // updateContext the MD view.
 }
 
@@ -23,15 +22,16 @@ const javaLangObject = 'java.lang.Object';
  * is owned by the main process.
  */
 function saveToCache(key, value) {
-  const new_value = value;
+  const newWeight = value;
   if (key.includes(javaLangObject)) { // discount java.lang.Object
     for (const k in value) {
       if ({}.hasOwnProperty.call(value, k)) {
-        new_value[k] = javaLangObjectDiscount * value[k];
+        newWeight[k] = javaLangObjectDiscount * value[k];
       }
     }
   }
-  ipcRenderer.send('ice-cache', key, new_value);
+
+  ipcRenderer.send('ice-cache', key, newWeight);
 }
 
 // Key method for managing ICE model.
@@ -42,15 +42,15 @@ ipcRenderer.on('ice-update-intention', (event, intention) => {
   }
 });
 
-
 ipcRenderer.on('ice-display', updateModelContextAndView);
 
 // ------------ Event listener to trigger server API requests -------------------
 
-ipcRenderer.on('similarity-lookup', (event, contextId, className, outerMethod, cache_key, shouldUpdateDash) => {
+ipcRenderer.on('similarity-lookup',
+    (event, contextId, className, outerMethod, cacheKey, shouldUpdateDash) => {
   fetchSimilarity(className, outerMethod, result => {
-    if (result['status'] != 404) { // server has it. otherwise there is no hope to updateContext ice.
-      saveToCache(cache_key, result);
+    if (result.status != 404) { // server has it. otherwise there is no hope to updateContext ice.
+      saveToCache(cacheKey, result);
       updateModelContextAndView(null, contextId, className, result);
     }
   });
@@ -58,7 +58,7 @@ ipcRenderer.on('similarity-lookup', (event, contextId, className, outerMethod, c
 
 ipcRenderer.on('usage-lookup', (event, contextId, className) => {
   fetchMethodUsage(className, results => {
-    if (results['status'] != 404) {
+    if (results.status != 404) {
       saveToCache(className, results);
       updateModelContextAndView(null, contextId, className, results);
     }
