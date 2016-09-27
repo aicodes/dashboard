@@ -74,23 +74,22 @@ app.on('ready', () => {
     });
     
     const platform = os.platform() + '_' + os.arch();
-    const version = app.getVersion();
-    
-    // const version = '0.3.0';
-    // const platform = 'osx_x64';
+    // const version = app.getVersion();
+    const version = '0.2.0';
     
     autoUpdater.setFeedURL('https://aicodes-nuts.herokuapp.com/update/' + platform + '/' + version);
     autoUpdater.checkForUpdates();
     autoUpdater.on('update-downloaded',
         (event, releaseNotes, releaseName, releaseDate, updateURL) => {
-            content.send('update-downloaded', releaseName);
+            content.send('app-update-downloaded', releaseName);
         }
     );
     autoUpdater.on('checking-for-update', () => {
-            // content.send('update-downloaded', "test");
+            console.log("Checking for updates");
         }
     );
     autoUpdater.on('update-available', () => {
+            console.log("Updates available");
             // content.send('update-downloaded', "test2");
         }
     );

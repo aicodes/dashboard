@@ -66,9 +66,10 @@ ipcRenderer.on('usage-lookup', (event, contextId, className) => {
 });
 
 // -------- auto-update.
-ipcRenderer.on('update-downloaded', (event, releaseName) => {
+ipcRenderer.on('app-update-downloaded', (event, releaseName) => {
+  console.log('updated downloaded and app notified');
   const button = document.getElementsById('statusBar');
-  button['aria-hidden'] = false;
+  button.style.display = 'flex';
 });
 
 // ------- Pre-populating key metrics --------------
