@@ -74,8 +74,7 @@ app.on('ready', () => {
     });
     
     const platform = os.platform() + '_' + os.arch();
-    // const version = app.getVersion();
-    const version = '0.2.0';
+    const version = app.getVersion();
     
     autoUpdater.setFeedURL('https://aicodes-nuts.herokuapp.com/update/' + platform + '/' + version);
     autoUpdater.checkForUpdates();
