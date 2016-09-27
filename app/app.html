@@ -15,6 +15,18 @@
             margin: 0 auto;
             padding: 45px;
         }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 12px 12px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
     </style>
 
     <script src="helpers/context_menu.js"></script>
@@ -26,15 +38,25 @@
     <script type="text/javascript">
         google.charts.load('current', {'packages':['corechart']});
     </script>
+    <script type="text/javascript">
+        const {ipcRenderer} = require('electron');
+
+        function download_install() {
+            ipcRenderer.send('update-quit-install');
+        }
+    </script>
+
 </head>
 <body>
+
 <div id="welcome-div" style="width: 100%;">
 <webview id="welcome" src="http://www.ai.codes/welcome.html" style="display:flex; height: 100%; width: 100%;"></webview>
 </div>
 <div>
 <article class="markdown-body" id="ice-body" style="display: none;">
-    <div id="statusBar">
-        <i class="fa fa-plane" aria-hidden="true"></i>
+    <div id="statusBar" aria-hidden="true">
+        <h5> AI.codes is ready to be upgraded.</h5>
+        <button class="button" onclick="download_install()" id="downloadButton" style="display: inline">Quit and Install</button>
     </div>
     <div id="iceId" style="display: none;"></div>
     <h2>Intention</h2>

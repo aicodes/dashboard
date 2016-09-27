@@ -65,6 +65,12 @@ ipcRenderer.on('usage-lookup', (event, contextId, className) => {
   });
 });
 
+// -------- auto-update.
+ipcRenderer.on('update-downloaded', (event, releaseName) => {
+  const button = document.getElementsById('statusBar');
+  button['aria-hidden'] = false;
+});
+
 // ------- Pre-populating key metrics --------------
 /*
 ipcRenderer.on('fetch-method-usage-quiet', (event, className) => {

@@ -1,14 +1,15 @@
 {
   "name": "ai.codes.dash",
-  "productName": "AI.codes Dashboard",
-  "description": "AI.codes Developer Dashboard and Language Server",
-  "version": "0.0.1",
+  "productName": "AIcodes",
+  "description": "AI.codes Developer Dashboard",
+  "version": "0.3.1",
   "author": "Eric Xu <exu@ai.codes>",
   "copyright": "© 2016, AI.codes Inc",
   "homepage": "http://www.ai.codes",
   "main": "background.js",
   "dependencies": {
     "elasticsearch": "^11.0.1",
+    "electron-config": "^0.2.1",
     "express": "^4.14.0",
     "express-ws": "^2.0.0",
     "fs-jetpack": "^0.9.0",
