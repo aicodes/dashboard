@@ -22,28 +22,106 @@
 
 import express from 'express';
 import { fetchSnippets } from './server_api';
+import { intentionStore } from './intention_store';
+
+const primitiveType = new Set(['boolean', 'byte', 'char', 'short',
+    'int', 'long', 'float', 'double',]);
 
 function createExpressServer(content, serverCache, isIncognitoClass) {
+  function eraseGenericType(typeName) {
+    return typeName.split('<')[0];
+  }
+
   // Lookup cache or trigger async API to server. Returns result in cache or {}.
-  function asyncLookup(contextId, outerMethod, className, notifyDash) {
-    const typeErasedClassName = className.split('<')[0]; // Erase the generic type.
-    if (isIncognitoClass(className)) {
+  function asyncLookup(contextId, contextMethod, tokenType, notifyDash) {
+    const type = eraseGenericType(tokenType); // Erase the generic type.
+    if (isIncognitoClass(type)) {
       return {};
     }
 
-    const cacheKey = outerMethod + ':' + typeErasedClassName;
+    if (primitiveType.has(type)) { // Ignore primitive type.
+      return {};
+    }
+
+    const cacheKey = `${contextMethod}:${type}`;
     if (serverCache.has(cacheKey)) {
       const weights = serverCache.get(cacheKey);
       if (notifyDash) {
-        content.send('ice-display', contextId, typeErasedClassName, weights);
+        content.send('ice-display', contextId, type, weights);
       }
 
       return weights;
     } else {
-      content.send('similarity-lookup', contextId, typeErasedClassName,
-          outerMethod, cacheKey, notifyDash);
+      content.send('similarity-lookup', contextId, type,
+          contextMethod, cacheKey, notifyDash);
       return {};
     }
+  }
+
+  // Erase context-specific variable names and turn intention into a generic query
+  // with type names. For instance, "convert myString to int" will become
+  // "convert String to int".
+  function rewriteQuery(intentionString) {
+    const cachedSymbols = intentionStore.get();
+    const symbolTable = new Map();
+    const localSymbolTable = new Map();
+    for (const field of cachedSymbols.fields) {
+      symbolTable.set(field.name, eraseGenericType(field.type));
+    }
+
+    for (const variable of cachedSymbols.variables) {
+      symbolTable.set(variable.name, eraseGenericType(variable.type));
+    }
+
+    for (const parameter of cachedSymbols.parameters) {
+      symbolTable.set(parameter.name, eraseGenericType(parameter.type));
+    }
+
+    // Tokenize the intention string (may be URL encoded).
+    const tokens = decodeURIComponent(intentionString.replace(/\+/g, '%20')).split(/\s+/);
+    const newTokens = [];
+    for (const token of tokens) {
+      if (symbolTable.has(token)) {
+        let tokenType = symbolTable.get(token);
+        localSymbolTable.set(token, tokenType);
+        // !!Hack!! will eventually be handled by backend for type shortcuts.
+        if (tokenType.startsWith('java.lang.')) {
+          tokenType = tokenType.substr(10);
+        }
+
+        if (tokenType.startsWith('java.util.')) {
+          tokenType = tokenType.substr(10);
+        }
+
+        newTokens.push(tokenType);
+      } else {
+        newTokens.push(token);
+      }
+    }
+
+    return {
+      intention: encodeURIComponent(newTokens.join(' ')),
+      symbols: localSymbolTable,
+    };
+  }
+
+  function rewriteSnippets(symbolTable, snippets) {
+    for (const snippet of snippets) {
+      if (!('variables' in snippet)) continue;
+      const localSymbolTable = new Map(symbolTable);
+
+      // / Super dumb type matching. In future introduce some smart heuristics.
+      for (const variable of snippet.variables) {
+        for (const entry of localSymbolTable) {
+          if (variable.type === entry[1]) {
+            snippet.code = snippet.code.replace(new RegExp(variable.name, 'g'), entry[0]);
+            localSymbolTable.delete(entry[0]);
+          }
+        }
+      }
+    }
+
+    return snippets;
   }
 
   const app = express();
@@ -53,103 +131,93 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
   const expressWs = require('express-ws')(app);
   app.ws('/', (ws, req) => {
       // Messages from caret change.
-      ws.on('message', (message) => {
-          const jsonMessage = JSON.parse(message);
-          const intention = {};
-          intention.method = jsonMessage.methodName;
-          intention.stanza = jsonMessage.intentions;
-          intention.parameters = jsonMessage.parameters;
-          intention.variables = jsonMessage.localVariables;
-          intention.fields = jsonMessage.fields;
-          content.send('ice-update-intention', intention);
+    ws.on('message', (message) => {
+      const intention = JSON.parse(message);
+      intentionStore.save(intention);
+      content.send('ice-update-intention', intention);
 
-          const contextId = 'dummy-context';
-          for (const variableType of intention.variables) {
-            asyncLookup(contextId, intention.method, variableType, false);
-          }
+      const contextId = 'dummy-context';
+      for (const variable of intention.variables) {
+        asyncLookup(contextId, intention.method, variable.type, false);
+      }
 
-          for (const parameterType of intention.parameters) {
-            asyncLookup(contextId, intention.method, parameterType, false);
-          }
+      for (const parameter of intention.parameters) {
+        asyncLookup(contextId, intention.method, parameter.type, false);
+      }
 
-          for (const fieldType of intention.fields) {
-            asyncLookup(contextId, intention.method, fieldType, false);
-          }
-        });
-      ws.on('ping', () => {
-          ws.send('pong');
-        });
-      ws.on('open', () => {
-          console.log('channel open');
-        });
+      for (const field of intention.fields) {
+        asyncLookup(contextId, intention.method, field.type, false);
+      }
     });
+    ws.on('ping', () => {
+      ws.send('pong');
+    });
+    ws.on('open', () => {
+    });
+  });
 
   // ------------- HTTP endpoints -----------
-
   //  Snippet lookup //
   app.get('/snippet/:intention', (req, res) => {
-      const result = {
-          header: {
-              status: 200,
-            },
-          snippets: [],
-        };
+    const result = {
+      header: {
+        status: 200,
+      },
+      snippets: [],
+    };
 
-      const intention = req.params.intention;
-      fetchSnippets(intention, (snippets) => {
-          result.snippets = snippets;
-          console.log(result);
-          res.json(result);
-        }, (error => {
-
-          result.header.status = 400;
-          result.header.message = error;
-          console.log(result);
-          res.json(result);
-        }));
-    });
+    const query = rewriteQuery(req.params.intention);
+    fetchSnippets(query.intention, (snippets) => {
+      result.snippets = rewriteSnippets(query.symbols, snippets);
+      res.json(result);
+    }, (error => {
+      result.header.status = 400;
+      result.header.message = error;
+      res.json(result);
+    }));
+  });
 
   //  Method Context Similarity //
   app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
-      const contextId = req.params.contextId;
-      const className = req.params.className;
-      const outerMethod = req.params.outerMethod;
+    const contextId = req.params.contextId;
+    const className = req.params.className;
+    const outerMethod = req.params.outerMethod;
 
-      const result = {
-          header: {
-              status: 200,
-            },
-        };
+    const result = {
+      header: {
+        status: 200,
+      },
+    };
 
-      result.weights = asyncLookup(contextId, outerMethod, className, true);
-      res.json(result);
-    });
+    result.weights = asyncLookup(contextId, outerMethod, className, true);
+    res.json(result);
+  });
 
   // Method Usage Stats //
   app.get('/usage/:contextId/:className', (req, res) => {
-      const contextId = req.params.contextId;
-      const className = req.params.className;
+    const contextId = req.params.contextId;
+    const className = req.params.className;
 
-      const result = {
-          header: {
-              status: 200,
-            },
-          weights: {}, // default cache TTL for cold lookup: 1s
-        };
-      if (serverCache.has(className)) {
-        result.weights = serverCache.get(className);
-        content.send('ice-display', contextId, className, result.weights);
-      } else {
-        content.send('usage-lookup', contextId, className);
-      }
+    const result = {
+      header: {
+        status: 200,
+      },
+      weights: {}, // default cache TTL for cold lookup: 1s
+    };
+    if (serverCache.has(className)) {
+      result.weights = serverCache.get(className);
+      content.send('ice-display', contextId, className, result.weights);
+    } else {
+      content.send('usage-lookup', contextId, className);
+    }
 
-      res.json(result);
-    });
+    res.json(result);
+  });
 
   // The annoying favicon when we use browser to poke the end point.
   app.get('/favicon.ico', (req, res) => {
-      res.end('');
-    });
+    res.end('');
+  });
 
   return app;
 }

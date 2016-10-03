@@ -27,8 +27,8 @@ function fetchSimilarity(className, outerMethod, callback) {
 
 function fetchSnippets(query, callback, err) {
   const url = `https://api.ai.codes/jvm/v2/snippet?q=${query}`;
-  request(url, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
+  request(url, (error, response, body) => {
+    if (!error && response.statusCode === 200) {
       callback(JSON.parse(body).snippets);
     } else {
       err(error);

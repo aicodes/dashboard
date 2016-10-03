@@ -1,5 +1,7 @@
 // The Model object to represent an ICE (intention/context/extension) object.
 
+// It is owned by render (not main thread). Including it in main thread won't work.
+
 // ICE is updated in two ways:
 //  1. when user moves carets around, they move into different places in code,
 //      as such, the intention part changes.

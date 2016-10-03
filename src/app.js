@@ -48,17 +48,17 @@ ipcRenderer.on('ice-display', updateModelContextAndView);
 
 ipcRenderer.on('similarity-lookup',
     (event, contextId, className, outerMethod, cacheKey, shouldUpdateDash) => {
-  fetchSimilarity(className, outerMethod, result => {
-    if (result.status != 404) { // server has it. otherwise there is no hope to updateContext ice.
-      saveToCache(cacheKey, result);
-      updateModelContextAndView(null, contextId, className, result);
-    }
-  });
-});
+      fetchSimilarity(className, outerMethod, result => {
+        if (result.status !== 404) { // server has it. otherwise there is no hope to updateContext ice.
+          saveToCache(cacheKey, result);
+          updateModelContextAndView(null, contextId, className, result);
+        }
+      });
+    });
 
 ipcRenderer.on('usage-lookup', (event, contextId, className) => {
   fetchMethodUsage(className, results => {
-    if (results.status != 404) {
+    if (results.status !== 404) {
       saveToCache(className, results);
       updateModelContextAndView(null, contextId, className, results);
     }
