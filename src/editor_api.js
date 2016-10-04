@@ -22,7 +22,7 @@
 
 import express from 'express';
 import { fetchSnippets } from './server_api';
-import { intentionStore } from './intention_store';
+import { contextStore } from './context_store';
 
 const primitiveType = new Set(['boolean', 'byte', 'char', 'short',
     'int', 'long', 'float', 'double',]);
@@ -62,18 +62,18 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
   // with type names. For instance, "convert myString to int" will become
   // "convert String to int".
   function rewriteQuery(intentionString) {
-    const cachedSymbols = intentionStore.get();
+    const cachedContext = contextStore.get();
     const symbolTable = new Map();
     const localSymbolTable = new Map();
-    for (const field of cachedSymbols.fields) {
+    for (const field of cachedContext.fields) {
       symbolTable.set(field.name, eraseGenericType(field.type));
     }
 
-    for (const variable of cachedSymbols.variables) {
+    for (const variable of cachedContext.variables) {
       symbolTable.set(variable.name, eraseGenericType(variable.type));
     }
 
-    for (const parameter of cachedSymbols.parameters) {
+    for (const parameter of cachedContext.parameters) {
       symbolTable.set(parameter.name, eraseGenericType(parameter.type));
     }
 
@@ -132,21 +132,21 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
   app.ws('/', (ws, req) => {
       // Messages from caret change.
     ws.on('message', (message) => {
-      const intention = JSON.parse(message);
-      intentionStore.save(intention);
-      content.send('ice-update-intention', intention);
+      const contextUpdate = JSON.parse(message);
+      contextStore.save(contextUpdate);
+      content.send('ice-update-intention', contextUpdate.intentions);
 
       const contextId = 'dummy-context';
-      for (const variable of intention.variables) {
-        asyncLookup(contextId, intention.method, variable.type, false);
+      for (const variable of contextUpdate.variables) {
+        asyncLookup(contextId, contextUpdate.method, variable.type, false);
       }
 
-      for (const parameter of intention.parameters) {
-        asyncLookup(contextId, intention.method, parameter.type, false);
+      for (const parameter of contextUpdate.parameters) {
+        asyncLookup(contextId, contextUpdate.method, parameter.type, false);
       }
 
-      for (const field of intention.fields) {
-        asyncLookup(contextId, intention.method, field.type, false);
+      for (const field of contextUpdate.fields) {
+        asyncLookup(contextId, contextUpdate.method, field.type, false);
       }
     });
     ws.on('ping', () => {

@@ -1,5 +1,5 @@
 // Owned by main thread to record the current intention context.
-class IntentionStore {
+class ContextStore {
   constructor() {
     this.intention = {};
   }
@@ -13,4 +13,4 @@ class IntentionStore {
   }
 }
 
-export const intentionStore = new IntentionStore();
+export const contextStore = new ContextStore();
