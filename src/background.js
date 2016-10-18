@@ -7,9 +7,9 @@
 // The proper way to do IPC is through ipcMain and ipcRender.
 // This process is `ipcMain`.
 
-import { app, Menu, ipcMain, autoUpdater } from 'electron';
-import { devMenuTemplate } from './menu/dev_menu_template';
-import { editMenuTemplate } from './menu/edit_menu_template';
+import {app, Menu, ipcMain, autoUpdater} from 'electron';
+import {devMenuTemplate} from './menu/dev_menu_template';
+import {editMenuTemplate} from './menu/edit_menu_template';
 import createWindow from './helpers/window';
 import populateClasses from './warm_up';
 import cache from './simple_cache';
@@ -18,6 +18,7 @@ import cache from './simple_cache';
 // in config/env_xxx.json file.
 import env from './env';
 import createServer from './editor_api';
+
 
 const Config = require('electron-config');
 const config = new Config();
@@ -34,6 +35,47 @@ const setApplicationMenu = function setApplicationMenu() {
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(menus));
 };
+
+
+function isIncognitoClass(className) {
+  // / Skip incognito classes
+  if (preferences === undefined || preferences.incognito === undefined) {
+    return false;
+  }
+
+  const incognitoRules = preferences.incognito;
+  for (const rule of incognitoRules) {
+    if (className === rule) {
+      return true;
+    }
+
+    if (className.search(rule) !== -1) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+function configAutoUpdater(updater, content) {
+  const platform = `${os.platform()}_${os.arch()}`;
+  const version = app.getVersion();
+
+  updater.setFeedURL(`https://aicodes-nuts.herokuapp.com/update/${platform}/${version}`);
+  updater.checkForUpdates();
+  updater.on('update-downloaded',
+    (event, releaseNotes, releaseName, releaseDate, updateURL) => {
+      content.send('app-update-downloaded', releaseName);
+    }
+  );
+  updater.on('checking-for-update', () => {
+    console.log('Checking for updates');
+  });
+  updater.on('update-available', () => {
+    console.log('Updates available');
+  });
+}
 
 // Save userData in separate folders for each environment.
 // Thanks to this you can use production and development versions of the app
@@ -54,13 +96,13 @@ app.on('ready', () => {
   mainWindow.loadURL(`file://${__dirname}/app.html`);
   const content = mainWindow.webContents;
 
-    /*
-     if (env.name === 'development') {
-     mainWindow.openDevTools();
-     } */
+  /*
+   if (env.name === 'development') {
+   mainWindow.openDevTools();
+   } */
 
-    // ==== Starts a local Ai.codes server ========
-    // Pre-populating a bunch of frequently used classes.
+  // ==== Starts a local Ai.codes server ========
+  // Pre-populating a bunch of frequently used classes.
   content.on('did-finish-load', () => {
     populateClasses(content);
   });
@@ -69,35 +111,21 @@ app.on('ready', () => {
   const expressServer = createServer(content, cache, isIncognitoClass);
 
   expressServer.listen(PORT, () => {
-        // Callback triggered when server is successfully listening. Hurray!
+    // Callback triggered when server is successfully listening. Hurray!
     console.log('Server listening on: http://localhost:%s', PORT);
   });
 
-  const platform = `${os.platform()}_${os.arch()}`;
-  const version = app.getVersion();
-
-  autoUpdater.setFeedURL(`https://aicodes-nuts.herokuapp.com/update/${platform}/${version}`);
-  autoUpdater.checkForUpdates();
-  autoUpdater.on('update-downloaded',
-        (event, releaseNotes, releaseName, releaseDate, updateURL) => {
-          content.send('app-update-downloaded', releaseName);
-        }
-    );
-  autoUpdater.on('checking-for-update', () => {
-    console.log('Checking for updates');
+  // Skip checking version update if it is not production.
+  if (env.name === 'production') {
+    configAutoUpdater(autoUpdater, content);
   }
-    );
-  autoUpdater.on('update-available', () => {
-    console.log('Updates available');
-  }
-    );
 
   ipcMain.on('update-quit-install', () => {
     mainWindow.setClosable(true);
     autoUpdater.quitAndInstall();
   });
 
-    // ====== ai.codes code ends =========
+  // ====== ai.codes code ends =========
 });
 
 app.on('window-all-closed', () => {
@@ -128,22 +156,3 @@ ipcMain.on('save-preference', (event, updatedPreferences) => {
   config.set('preferences', updatedPreferences);
 });
 
-function isIncognitoClass(className) {
-  // / Skip incognito classes
-  if (preferences === undefined || preferences.incognito === undefined) {
-    return false;
-  }
-
-  const incognitoRules = preferences.incognito;
-  for (const rule of incognitoRules) {
-    if (className === rule) {
-      return true;
-    }
-
-    if (className.search(rule) != -1) {
-      return true;
-    }
-  }
-
-  return false;
-}

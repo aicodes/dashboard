@@ -28,13 +28,14 @@ const primitiveType = new Set(['boolean', 'byte', 'char', 'short',
     'int', 'long', 'float', 'double',]);
 
 function createExpressServer(content, serverCache, isIncognitoClass) {
+
   function eraseGenericType(typeName) {
     return typeName.split('<')[0];
   }
 
   // Lookup cache or trigger async API to server. Returns result in cache or {}.
-  function asyncLookup(contextId, contextMethod, tokenType, notifyDash) {
-    const type = eraseGenericType(tokenType); // Erase the generic type.
+  function asyncLookup(contextId, contextMethod, variable, notifyDash) {
+    const type = eraseGenericType(variable.type); // Erase the generic type.
     if (isIncognitoClass(type)) {
       return {};
     }
@@ -49,13 +50,11 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
       if (notifyDash) {
         content.send('ice-display', contextId, type, weights);
       }
-
       return weights;
-    } else {
-      content.send('similarity-lookup', contextId, type,
-          contextMethod, cacheKey, notifyDash);
-      return {};
     }
+    content.send('similarity-lookup', contextId, type,
+      contextMethod, cacheKey, notifyDash);
+    return {};
   }
 
   // Erase context-specific variable names and turn intention into a generic query
@@ -65,16 +64,10 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
     const cachedContext = contextStore.get();
     const symbolTable = new Map();
     const localSymbolTable = new Map();
-    for (const field of cachedContext.fields) {
-      symbolTable.set(field.name, eraseGenericType(field.type));
-    }
-
+    console.log('In rewrite query');
+    console.log(cachedContext);
     for (const variable of cachedContext.variables) {
       symbolTable.set(variable.name, eraseGenericType(variable.type));
-    }
-
-    for (const parameter of cachedContext.parameters) {
-      symbolTable.set(parameter.name, eraseGenericType(parameter.type));
     }
 
     // Tokenize the intention string (may be URL encoded).
@@ -133,20 +126,13 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
       // Messages from caret change.
     ws.on('message', (message) => {
       const contextUpdate = JSON.parse(message);
+      console.log(message);
       contextStore.save(contextUpdate);
       content.send('ice-update-intention', contextUpdate.intentions);
-
       const contextId = 'dummy-context';
+      if (typeof (contextUpdate.variables) === 'undefined') return;
       for (const variable of contextUpdate.variables) {
-        asyncLookup(contextId, contextUpdate.method, variable.type, false);
-      }
-
-      for (const parameter of contextUpdate.parameters) {
-        asyncLookup(contextId, contextUpdate.method, parameter.type, false);
-      }
-
-      for (const field of contextUpdate.fields) {
-        asyncLookup(contextId, contextUpdate.method, field.type, false);
+        asyncLookup(contextId, contextUpdate.method, variable, false);
       }
     });
     ws.on('ping', () => {
@@ -189,7 +175,10 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
       },
     };
 
-    result.weights = asyncLookup(contextId, outerMethod, className, true);
+    const context = {
+      type: className,
+    };
+    result.weights = asyncLookup(contextId, outerMethod, context, true);
     res.json(result);
   });
 
