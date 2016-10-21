@@ -66,10 +66,11 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
     const localSymbolTable = new Map();
     console.log('In rewrite query');
     console.log(cachedContext);
-    for (const variable of cachedContext.variables) {
-      symbolTable.set(variable.name, eraseGenericType(variable.type));
+    if (typeof cachedContext.variables !== 'undefined') {
+      for (const variable of cachedContext.variables) {
+        symbolTable.set(variable.name, eraseGenericType(variable.type));
+      }
     }
-
     // Tokenize the intention string (may be URL encoded).
     const tokens = decodeURIComponent(intentionString.replace(/\+/g, '%20')).split(/\s+/);
     const newTokens = [];
