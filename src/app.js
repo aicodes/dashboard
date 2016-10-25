@@ -49,7 +49,8 @@ ipcRenderer.on('ice-display', updateModelContextAndView);
 ipcRenderer.on('similarity-lookup',
     (event, contextId, className, outerMethod, cacheKey, shouldUpdateDash) => {
       fetchSimilarity(className, outerMethod, result => {
-        if (result.status !== 404) { // server has it. otherwise there is no hope to updateContext ice.
+        // server has it. otherwise there is no hope to updateContext ice.
+        if (result.status !== 404) {
           saveToCache(cacheKey, result);
           updateModelContextAndView(null, contextId, className, result);
         }

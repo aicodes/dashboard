@@ -23,6 +23,7 @@ import createServer from './editor_api';
 const Config = require('electron-config');
 const config = new Config();
 let preferences = config.get('preferences');
+app.commandLine.appendSwitch('--disable-http-cache');
 
 const os = require('os');
 
@@ -85,6 +86,50 @@ if (env.name !== 'production') {
   app.setPath('userData', `${userDataPath} (${env.name})`);
 }
 
+/* OAuth protocol is not really a desktop-friendly protocol for
+ * widely distributed desktop app. It is especially so for open source
+ * desktop apps, as you'd need to store client key and secret somewhere.
+ * Obfuscation creates fake sense of security anyway.
+ *
+ * We opt to do OAuth 100% server-side. We need a way to pass the
+ * authenticated user token to Electron, though. The IPC mechanism
+ * for WebContent (especially for non-electron page hosted online) is
+ * rather limited. The `AIcodes hack` we came up is to monitor URL changes,
+ * and backend would issue a special redirection, appending user token
+ * to the redirect URL so Electron can capture.
+ *
+ * HTTPS protocol ensures that the URL is as secure as the page content.
+ */
+function captureUserToken(window, content) {
+  // Issue an async request. Will be captured by the event above.
+  /* content.on('did-navigate', (event, url) => {
+   content.on('found-in-page', (foundEvent, result) => {
+   console.log('... found in page event is triggered....');
+   console.log(result);
+   content.stopFindInPage('clearSelection');
+   // window.loadURL(`file://${__dirname}/app.html`);
+   });
+   content.findInPage('nuts');
+   });
+  content.on('did-finish-load', () => {
+    console.log('finished loading');
+     content.on('found-in-page', (foundEvent, result) => {
+     console.log('... found in page event is triggered....');
+     console.log(result);
+     content.stopFindInPage('clearSelection');
+     // window.loadURL(`file://${__dirname}/app.html`);
+     });
+     content.findInPage('demo.*ze');
+  });
+  */
+  content.on('did-navigate', (event, url) => {
+    const results = url.split('#');
+    if (results.length > 1) {
+      console.log(`User Access Token is: ${results[1]}.`);
+    }
+  });
+}
+
 app.on('ready', () => {
   setApplicationMenu();
 
@@ -94,7 +139,9 @@ app.on('ready', () => {
   });
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
+  // mainWindow.loadURL('https://www.ai.codes/oauth.html');
   const content = mainWindow.webContents;
+  captureUserToken(mainWindow, content);
 
   /*
    if (env.name === 'development') {
@@ -145,7 +192,7 @@ ipcMain.on('ice-cache', (event, className, extension) => {
 ipcMain.on('load-preference', (event) => {
   const result = config.get('preferences');
   if (result === undefined) {
-    config.set('preferences', { incognito: [] });
+    config.set('preferences', {incognito: []});
   }
 
   event.sender.send('update-preference-display', config.get('preferences'));

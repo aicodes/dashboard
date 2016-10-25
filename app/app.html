@@ -5,7 +5,7 @@
     <title>AI.codes Dashboard</title>
     <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Roboto" rel="stylesheet">
     <link href="stylesheets/main.css" rel="stylesheet" type="text/css">
-    <link href="stylesheets/github-markdown.css" rel="stylesheet" >
+    <link href="stylesheets/github-markdown.css" rel="stylesheet">
 
     <style>
         .markdown-body {
@@ -15,6 +15,7 @@
             margin: 0 auto;
             padding: 45px;
         }
+
         .button {
             background-color: #4CAF50;
             border: none;
@@ -27,48 +28,182 @@
             margin: 4px 2px;
             cursor: pointer;
         }
-    </style>
 
+        .loginbtn {
+            -webkit-border-radius: 6;
+            -moz-border-radius: 6;
+            border-radius: 6px;
+            font-family: Arial;
+            color: #ffffff;
+            font-size: 16px;
+            background: #32a051;
+            padding: 10px 10px 10px 20px;
+            text-decoration: none;
+            text-align: center;
+            float: right;
+        }
+
+        .loginbtn:hover {
+            background: #32a000;
+            text-decoration: none;
+        }
+
+        .statusbar {
+            padding-top: 10px;
+            padding-right: 20px;
+            width: 98%;
+            height: 40px;
+        }
+
+    </style>
     <script src="helpers/context_menu.js"></script>
     <script src="helpers/external_links.js"></script>
 
     <script src="app.js"></script>
 
+    <!--
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
         google.charts.load('current', {'packages':['corechart']});
     </script>
+    -->
     <script type="text/javascript">
         const {ipcRenderer} = require('electron');
-
+        const Config = require('electron-config');
+        const config = new Config();
         function download_install() {
             ipcRenderer.send('update-quit-install');
         }
     </script>
+    <script src="https://cdn.auth0.com/js/lock/10.2/lock.min.js"></script>
+    <script src="auth0-variables.js"></script>
 
+    <script>
+
+    </script>
 </head>
 <body>
-
-<div id="welcome-div" style="width: 100%;">
-<webview id="welcome" src="http://www.ai.codes/welcome.html" style="display:flex; height: 100%; width: 100%;"></webview>
-</div>
-<div>
-<article class="markdown-body" id="ice-body" style="display: none;">
-    <div id="statusBar" style="display: none;">
-        <h5> AI.codes is ready to be upgraded.</h5>
-        <button class="button" onclick="download_install()" id="downloadButton" style="display: inline">Quit and Install</button>
+<div id="profile-bar" class="statusbar">
+    <div id="profile">
+        <img id="avatar" style="width: 32px;border-radius:50%;float: right;" onclick="logout()">
+        <!--
+        <h3 id="name"></h3>
+        <h3 id="email"></h3>
+        -->
     </div>
-    <div id="iceId" style="display: none;"></div>
-    <h2>Intention</h2>
-    <div><pre><code id="intention">Intention of a user</code></pre></div>
-    <h2>Context</h2>
-    <div><pre><code id="context">Context Class</code></pre></div>
-    <h2>Extensions</h2>
-    <div><pre><code id="extension">Code extensions, suggested by ai.codes</code></pre></div>
-</article>
+    <a id="login" class="loginbtn">Sign in</a>
+    <script>
+        function showProfile(profile) {
+            document.getElementById('profile').style.display = "inline";
+            document.getElementById('login').style.display = "none";
+            document.getElementById('avatar').src = profile.picture;
+        }
+
+        function hideProfile() {
+            document.getElementById('profile').style.display = "none";
+            document.getElementById('login').style.display = "inline";
+        }
+
+        function logout() {
+            hideProfile();
+            config.delete('auth');
+            config.delete('profile');
+        }
+
+        var lock_options = {
+            theme: {
+                logo: 'https://www.ai.codes/logo-256x256.png',
+                primaryColor: '#32a051'
+            },
+            auth: {
+                redirect: false,
+                sso: false
+            }
+        };
+
+        var lock = new Auth0Lock(AUTH0_CLIENT_ID, AUTH0_DOMAIN, lock_options);
+        lock.on('authenticated', (authResult) => {
+            console.log("authenticated");
+            config.set('auth', authResult);
+            lock.getProfile(authResult.idToken, (err, profile) => {
+                config.set('profile', profile);
+                showProfile(profile);
+            });
+            lock.hide();
+        });
+
+        document.getElementById('login').addEventListener('click', function () {
+            lock.show();
+        });
+
+        if (config.has('profile')) {
+            let profile = config.get('profile');
+            showProfile(profile);
+        } else {
+            hideProfile();
+        }
+    </script>
 </div>
 
-<div id="chart_div"> </div>
+<div id="welcome-div" style="width: 98%;">
+    <article class="markdown-body">
+        <h2><a id="user-content-aicodes-dashboard" class="anchor" href="#aicodes-dashboard" aria-hidden="true"><span
+                aria-hidden="true" class="octicon octicon-link"></span></a>
+            Predictive Coding Dashboard </h2>
+
+        <p><strong>Welcome!</strong> Since you are also a developer, let's cut the BS and go straight down to business.
+        </p>
+
+        <h3>
+            <a id="user-content-what-is-this" class="anchor" href="#what-is-this" aria-hidden="true"><span
+                    aria-hidden="true" class="octicon octicon-link"></span></a>What is this?</h3>
+
+        <p>You've got a deal. This dashboard is a two-in-one combo. It is a <strong>dashboard</strong> where you can get
+            insights on the code. It is also a <strong>local proxy</strong> that talks to your editor, while talks to AI.codes API asynchronously.</p>
+        <h3>
+            <a id="user-content-whats-in-for-me" class="anchor" href="#whats-in-for-me" aria-hidden="true"><span
+                    aria-hidden="true" class="octicon octicon-link"></span></a>What's in for me?</h3>
+
+        <p>As you code, we try to understand the semantics of the code, distill your <strong>intention</strong>,
+            understand the <strong>context</strong>, and gives you suggestions(<strong>extensions</strong>).</p>
+
+        <h3>
+            <a id="user-content-super-important-enterprise-stuff" class="anchor"
+               href="#super-important-enterprise-stuff" aria-hidden="true"><span aria-hidden="true"
+                                                                                 class="octicon octicon-link"></span></a>Super
+            Important Privacy Stuff</h3>
+
+        <p>We would never send your code to our server. We send variable type or intention as a query to server when you instruct it to do so.</p>
+        <hr>
+
+        <p>Made with love, by nerds at <a href="http://www.ai.codes">ai.codes</a>.</p>
+</div>
+
+<div>
+    <article class="markdown-body" id="ice-body" style="display: none;">
+        <div id="statusBar" style="display: none;">
+            <h5> AI.codes is ready to be upgraded.</h5>
+            <button class="button" onclick="download_install()" id="downloadButton" style="display: inline">Quit and
+                Install
+            </button>
+        </div>
+        <div id="iceId" style="display: none;"></div>
+        <h2>Intention</h2>
+        <div>
+            <pre><code id="intention">Intention of a user</code></pre>
+        </div>
+        <h2>Context</h2>
+        <div>
+            <pre><code id="context">Context Class</code></pre>
+        </div>
+        <h2>Extensions</h2>
+        <div>
+            <pre><code id="extension">Code extensions, suggested by ai.codes</code></pre>
+        </div>
+    </article>
+</div>
+
+<div id="chart_div"></div>
 <!--    <webview id="docs" src="https://www.github.com/" style="display:inline-flex; width:1000px; height:600px">
 </webview> -->
 </body>
