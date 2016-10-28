@@ -1,6 +1,12 @@
 // The View object for ICE. Responsible for rendering ICE in dashboard.
+import { config } from './simple_config';
 
 function update(iceModel) {
+  if (!config.has('profile')) {
+    return;
+    // only actually update the view when user is sign'ed in
+  }
+
   const welcomeDiv = document.getElementById('welcome-div');
   if (welcomeDiv != null) {
     welcomeDiv.outerHTML = '';

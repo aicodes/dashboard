@@ -23,6 +23,7 @@
 import express from 'express';
 import { fetchSnippets } from './server_api';
 import { contextStore } from './context_store';
+import { config } from './simple_config';
 
 const primitiveType = new Set(['boolean', 'byte', 'char', 'short',
     'int', 'long', 'float', 'double',]);
@@ -64,15 +65,15 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
     const cachedContext = contextStore.get();
     const symbolTable = new Map();
     const localSymbolTable = new Map();
-    console.log('In rewrite query');
-    console.log(cachedContext);
+    // console.log('In rewrite query');
+    // console.log(cachedContext);
     if (typeof cachedContext.variables !== 'undefined') {
       for (const variable of cachedContext.variables) {
         symbolTable.set(variable.name, eraseGenericType(variable.type));
       }
     }
     // Tokenize the intention string (may be URL encoded).
-    const tokens = decodeURIComponent(intentionString.replace(/\+/g, '%20')).split(/\s+/);
+    const tokens = decodeURIComponent(intentionString.replace(/\+/g, '%20')).split(/[\s,]+/);
     const newTokens = [];
     for (const token of tokens) {
       if (symbolTable.has(token)) {
@@ -101,20 +102,20 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
 
   function rewriteSnippets(symbolTable, snippets) {
     for (const snippet of snippets) {
-      if (!('variables' in snippet)) continue;
-      const localSymbolTable = new Map(symbolTable);
+      if ('variables' in snippet) {
+        const localSymbolTable = new Map(symbolTable);
 
-      // / Super dumb type matching. In future introduce some smart heuristics.
-      for (const variable of snippet.variables) {
-        for (const entry of localSymbolTable) {
-          if (variable.type === entry[1]) {
-            snippet.code = snippet.code.replace(new RegExp(variable.name, 'g'), entry[0]);
-            localSymbolTable.delete(entry[0]);
+        // TODO(exu): very dumb type matching. In future introduce some smart heuristics.
+        for (const variable of snippet.variables) {
+          for (const entry of localSymbolTable) {
+            if (variable.type === entry[1]) {
+              snippet.code = snippet.code.replace(new RegExp(variable.name, 'g'), entry[0]);
+              localSymbolTable.delete(entry[0]);
+            }
           }
         }
       }
     }
-
     return snippets;
   }
 
@@ -127,7 +128,7 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
       // Messages from caret change.
     ws.on('message', (message) => {
       const contextUpdate = JSON.parse(message);
-      console.log(message);
+      // console.log(message);
       contextStore.save(contextUpdate);
       content.send('ice-update-intention', contextUpdate.intentions);
       const contextId = 'dummy-context';
@@ -152,7 +153,11 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
       },
       snippets: [],
     };
-
+    if (!config.has('token')) {
+      result.header.message = 'you need to sign in';
+      res.json(result);
+      return;
+    }
     const query = rewriteQuery(req.params.intention);
     fetchSnippets(query.intention, (snippets) => {
       result.snippets = rewriteSnippets(query.symbols, snippets);
@@ -166,15 +171,23 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
 
   //  Method Context Similarity //
   app.get('/similarity/:contextId/:className/:outerMethod', (req, res) => {
-    const contextId = req.params.contextId;
-    const className = req.params.className;
-    const outerMethod = req.params.outerMethod;
-
     const result = {
       header: {
         status: 200,
       },
     };
+
+    if (!config.has('token')) {
+      result.header.message = 'you need to sign in';
+      res.json(result);
+      return;
+    }
+
+    const contextId = req.params.contextId;
+    const className = req.params.className;
+    const outerMethod = req.params.outerMethod;
+
+
 
     const context = {
       type: className,
@@ -185,15 +198,21 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
 
   // Method Usage Stats //
   app.get('/usage/:contextId/:className', (req, res) => {
-    const contextId = req.params.contextId;
-    const className = req.params.className;
-
     const result = {
       header: {
         status: 200,
       },
       weights: {}, // default cache TTL for cold lookup: 1s
     };
+
+    if (!config.has('token')) {
+      result.header.message = 'you need to sign in';
+      res.json(result);
+      return;
+    }
+
+    const contextId = req.params.contextId;
+    const className = req.params.className;
     if (serverCache.has(className)) {
       result.weights = serverCache.get(className);
       content.send('ice-display', contextId, className, result.weights);

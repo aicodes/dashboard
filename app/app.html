@@ -69,8 +69,6 @@
     -->
     <script type="text/javascript">
         const {ipcRenderer} = require('electron');
-        const Config = require('electron-config');
-        const config = new Config();
         function download_install() {
             ipcRenderer.send('update-quit-install');
         }
@@ -79,7 +77,8 @@
     <script src="auth0-variables.js"></script>
 
     <script>
-
+        const Config = require('electron-config');
+        const uiconfig = new Config();
     </script>
 </head>
 <body>
@@ -106,8 +105,8 @@
 
         function logout() {
             hideProfile();
-            config.delete('auth');
-            config.delete('profile');
+            uiconfig.delete('ui-profile');
+            ipcRenderer.send('delete-auth-config');
         }
 
         var lock_options = {
@@ -121,12 +120,17 @@
             }
         };
 
+
         var lock = new Auth0Lock(AUTH0_CLIENT_ID, AUTH0_DOMAIN, lock_options);
         lock.on('authenticated', (authResult) => {
             console.log("authenticated");
-            config.set('auth', authResult);
             lock.getProfile(authResult.idToken, (err, profile) => {
-                config.set('profile', profile);
+                uiconfig.set('ui-profile', profile);
+                ipcRenderer.send('update-auth-config', {
+                    auth: authResult,
+                    profile: profile,
+                    token: authResult.idToken
+                });
                 showProfile(profile);
             });
             lock.hide();
@@ -136,9 +140,8 @@
             lock.show();
         });
 
-        if (config.has('profile')) {
-            let profile = config.get('profile');
-            showProfile(profile);
+        if (uiconfig.has('ui-profile')) {
+            showProfile(uiconfig.get('ui-profile'));
         } else {
             hideProfile();
         }
@@ -177,9 +180,10 @@
         <hr>
 
         <p>Made with love, by nerds at <a href="http://www.ai.codes">ai.codes</a>.</p>
+    </article>
 </div>
 
-<div>
+<div id="dashboard">
     <article class="markdown-body" id="ice-body" style="display: none;">
         <div id="statusBar" style="display: none;">
             <h5> AI.codes is ready to be upgraded.</h5>

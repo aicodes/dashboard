@@ -13,15 +13,13 @@ import {editMenuTemplate} from './menu/edit_menu_template';
 import createWindow from './helpers/window';
 import populateClasses from './warm_up';
 import cache from './simple_cache';
+import { config } from './simple_config';
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from './env';
 import createServer from './editor_api';
 
-
-const Config = require('electron-config');
-const config = new Config();
 let preferences = config.get('preferences');
 app.commandLine.appendSwitch('--disable-http-cache');
 
@@ -100,9 +98,10 @@ if (env.name !== 'production') {
  *
  * HTTPS protocol ensures that the URL is as secure as the page content.
  */
+/*
 function captureUserToken(window, content) {
   // Issue an async request. Will be captured by the event above.
-  /* content.on('did-navigate', (event, url) => {
+   content.on('did-navigate', (event, url) => {
    content.on('found-in-page', (foundEvent, result) => {
    console.log('... found in page event is triggered....');
    console.log(result);
@@ -121,7 +120,7 @@ function captureUserToken(window, content) {
      });
      content.findInPage('demo.*ze');
   });
-  */
+
   content.on('did-navigate', (event, url) => {
     const results = url.split('#');
     if (results.length > 1) {
@@ -129,6 +128,7 @@ function captureUserToken(window, content) {
     }
   });
 }
+*/
 
 app.on('ready', () => {
   setApplicationMenu();
@@ -141,7 +141,7 @@ app.on('ready', () => {
   mainWindow.loadURL(`file://${__dirname}/app.html`);
   // mainWindow.loadURL('https://www.ai.codes/oauth.html');
   const content = mainWindow.webContents;
-  captureUserToken(mainWindow, content);
+  // captureUserToken(mainWindow, content);
 
   /*
    if (env.name === 'development') {
@@ -201,5 +201,17 @@ ipcMain.on('load-preference', (event) => {
 ipcMain.on('save-preference', (event, updatedPreferences) => {
   preferences = updatedPreferences;
   config.set('preferences', updatedPreferences);
+});
+
+ipcMain.on('delete-auth-config', () => {
+  config.delete('auth');
+  config.delete('profile');
+  config.delete('token');
+});
+
+ipcMain.on('update-auth-config', (event, configs) => {
+  config.set('auth', configs.auth);
+  config.set('profile', configs.profile);
+  config.set('token', configs.token);
 });
 
