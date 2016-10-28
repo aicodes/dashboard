@@ -1,8 +1,8 @@
 {
   "name": "aicodes.dashboard",
   "productName": "AIcodes",
-  "description": "AI.codes Developer Dashboard",
-  "version": "0.4.1",
+  "description": "AI.codes Predictive Coding Dashboard",
+  "version": "0.4.2",
   "author": "Eric Xu <exu@ai.codes>",
   "copyright": "© 2016, AI.codes Inc",
   "homepage": "http://www.ai.codes",
