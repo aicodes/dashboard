@@ -1,8 +1,11 @@
+/** This file is part of the rendering process. It cannot directly communicate
+ * with background.js (main process).
+ */
+
 import { ipcRenderer } from 'electron'; // native electron module
 import { iceModel } from './ice_model';
 import updateView from './dashboard_view';
 import { fetchMethodUsage, fetchSimilarity } from './server_api';
-import { config } from './simple_config';
 
 function updateModelContextAndView(error, contextId, context, extension) {
   // Update Model object.

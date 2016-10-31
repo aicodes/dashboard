@@ -106,7 +106,8 @@
         function logout() {
             hideProfile();
             uiconfig.delete('ui-profile');
-            ipcRenderer.send('delete-auth-config');
+            uiconfig.delete('token');
+            uiconfig.delete('auth');
         }
 
         var lock_options = {
@@ -123,14 +124,11 @@
 
         var lock = new Auth0Lock(AUTH0_CLIENT_ID, AUTH0_DOMAIN, lock_options);
         lock.on('authenticated', (authResult) => {
-            console.log("authenticated");
+            console.log("user authenticated");
             lock.getProfile(authResult.idToken, (err, profile) => {
                 uiconfig.set('ui-profile', profile);
-                ipcRenderer.send('update-auth-config', {
-                    auth: authResult,
-                    profile: profile,
-                    token: authResult.idToken
-                });
+                uiconfig.set('auth', authResult);
+                uiconfig.set('token', authResult.idToken);
                 showProfile(profile);
             });
             lock.hide();

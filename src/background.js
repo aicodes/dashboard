@@ -7,6 +7,7 @@
 // The proper way to do IPC is through ipcMain and ipcRender.
 // This process is `ipcMain`.
 
+import {os} from 'os';
 import {app, Menu, ipcMain, autoUpdater} from 'electron';
 import {devMenuTemplate} from './menu/dev_menu_template';
 import {editMenuTemplate} from './menu/edit_menu_template';
@@ -23,7 +24,7 @@ import createServer from './editor_api';
 let preferences = config.get('preferences');
 app.commandLine.appendSwitch('--disable-http-cache');
 
-const os = require('os');
+// const os = require('os');
 
 const setApplicationMenu = function setApplicationMenu() {
   const menus = [editMenuTemplate];
@@ -79,10 +80,15 @@ function configAutoUpdater(updater, content) {
 // Save userData in separate folders for each environment.
 // Thanks to this you can use production and development versions of the app
 // on same machine like those are two separate apps.
+//
+// TODO: This trick would work if we have a way to unify the settings path used by
+// both app (render process) and remote (main process).
+/*
 if (env.name !== 'production') {
   const userDataPath = app.getPath('userData');
   app.setPath('userData', `${userDataPath} (${env.name})`);
-}
+  // remoteApp.setPath('userData', `${userDataPath} (${env.name})`);
+}*/
 
 /* OAuth protocol is not really a desktop-friendly protocol for
  * widely distributed desktop app. It is especially so for open source
@@ -201,17 +207,5 @@ ipcMain.on('load-preference', (event) => {
 ipcMain.on('save-preference', (event, updatedPreferences) => {
   preferences = updatedPreferences;
   config.set('preferences', updatedPreferences);
-});
-
-ipcMain.on('delete-auth-config', () => {
-  config.delete('auth');
-  config.delete('profile');
-  config.delete('token');
-});
-
-ipcMain.on('update-auth-config', (event, configs) => {
-  config.set('auth', configs.auth);
-  config.set('profile', configs.profile);
-  config.set('token', configs.token);
 });
 

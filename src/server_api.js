@@ -1,10 +1,13 @@
-// Takes care of communication with ai.codes server.
+/* Defines a set of functions that takes care of communication with ai.codes server.
+ * Owned by the rendering process (app.js).
+ */
 import { config } from './simple_config';
+
 const request = require('request');
 
 const apiEndPoint = 'https://api.ai.codes/jvm/v3beta';
 // const apiEndPoint = 'http://localhost:8088/jvm/v3beta';
-
+// console.log(config);
 
 function fetchMethodUsage(className, callback) {
   const option = {
