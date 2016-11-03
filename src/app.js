@@ -40,8 +40,8 @@ function saveToCache(key, value) {
 
 // Key method for managing ICE model.
 ipcRenderer.on('ice-update-intention', (event, intention) => {
-  const result = iceModel.updateIntention(intention);
-  if (result) {
+  const shouldUpdateView = iceModel.update(intention);
+  if (shouldUpdateView) {
     updateView(iceModel);
   }
 });

@@ -16,11 +16,10 @@ class IceModel {
     this.extension = [];
   }
 
-  updateIntention(intention) {
+  update(intention) {
     if (JSON.stringify(this.intention) === JSON.stringify(intention)) {
       return false;
     }
-
     this.intention = intention;
     this.context.clear();
     this.extension.length = 0;
