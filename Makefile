@@ -6,3 +6,5 @@ upload-dmg:
 	gsutil cp ./$(RELEASE) gs://www.ai.codes
 	gsutil acl ch -u AllUsers:R gs://www.ai.codes/$(RELEASE)
 	
+release:
+	npm run release
