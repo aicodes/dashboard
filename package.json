@@ -4,7 +4,7 @@
     "category": "public.app-category.developer-tools",
     "win": {
       "target": [
-        "nsis"
+        "squirrel"
       ],
       "icon": "resources/windows/icon.ico"
     },
@@ -12,6 +12,9 @@
       "oneClick": true,
       "installerHeaderIcon": "resources/windows/setup-icon.ico"
     },
+    "squirrelWindows": {
+      "remoteReleases": true
+    }	
     "mac": {
       "icon": "resources/osx/icon.icns"
     },
