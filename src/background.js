@@ -24,7 +24,7 @@ import createServer from './editor_api';
 let preferences = config.get('preferences');
 app.commandLine.appendSwitch('--disable-http-cache');
 
-// const os = require('os');
+const os = require('os');
 
 const setApplicationMenu = function setApplicationMenu() {
   const menus = [editMenuTemplate];
