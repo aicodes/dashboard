@@ -14,7 +14,7 @@
     },
     "squirrelWindows": {
       "remoteReleases": true
-    }	
+    },
     "mac": {
       "icon": "resources/osx/icon.icns"
     },
