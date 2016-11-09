@@ -169,7 +169,8 @@ app.on('ready', () => {
   });
 
   // Skip checking version update if it is not production.
-  if (env.name === 'production') {
+  // Windows has some issues, ignore that platform for now.
+  if (env.name === 'production' && os.platform() !== 'win32') {
     configAutoUpdater(autoUpdater, content);
   }
 
