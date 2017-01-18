@@ -101,8 +101,12 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
   }
 
   function rewriteSnippets(symbolTable, snippets) {
+    if (snippets === undefined) { return []; }
+    // console.log("Fetched snippets from server")
     for (const snippet of snippets) {
       if ('variables' in snippet) {
+        // console.log("replacing variables");
+	// console.log(snippet.variables);
         const localSymbolTable = new Map(symbolTable);
 
         // TODO(exu): very dumb type matching. In future introduce some smart heuristics.

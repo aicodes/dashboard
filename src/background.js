@@ -59,6 +59,7 @@ function isIncognitoClass(className) {
 
 
 function configAutoUpdater(updater, content) {
+  console.log(os);
   const platform = `${os.platform()}_${os.arch()}`;
   const version = app.getVersion();
 
