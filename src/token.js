@@ -10,18 +10,17 @@ const AUTH0_DOMAIN = 'aicodes.auth0.com';
 /**
  * Fetch refresh token from oauth server.
  */
-function fetchNewAccessToken(refresh_token) {
+function fetchNewAccessToken(refreshToken) {
   const option = {
     method: 'post',
     url: `https://${AUTH0_DOMAIN}/delegation`,
-    json: true,
     headers: {
       'User-Agent': 'Dashboard',
     },
     json: {
       client_id: AUTH0_CLIENT_ID,
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      refresh_token,
+      refresh_token: refreshToken,
       api_type: 'app',
     },
   };

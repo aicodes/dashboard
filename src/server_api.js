@@ -6,6 +6,7 @@
 import { config } from './simple_config';
 
 const request = require('request');
+
 const apiEndPoint = 'https://api.ai.codes/jvm/v3beta';
 
 function fetchMethodUsage(className, callback) {
@@ -59,5 +60,4 @@ export {
     fetchMethodUsage,
     fetchSimilarity,
     fetchSnippets,
-    refreshToken,
 };
