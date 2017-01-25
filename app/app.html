@@ -69,8 +69,15 @@
     -->
     <script type="text/javascript">
         const {ipcRenderer} = require('electron');
+        const {Console} = require('console');
+        const nConsole = new Console(process.stdout, process.stderr);
         function download_install() {
             ipcRenderer.send('update-quit-install');
+        }
+
+        function requestNewAccessToken() {
+            nConsole.log('webpage triggers a refresh request');  /// will deprecate soon
+            ipcRenderer.send('get-new-access-token'); // the request is done in ipcMain (background process).
         }
     </script>
     <script src="https://cdn.auth0.com/js/lock/10.2/lock.min.js"></script>
@@ -84,11 +91,7 @@
 <body>
 <div id="profile-bar" class="statusbar">
     <div id="profile">
-        <img id="avatar" style="width: 32px;border-radius:50%;float: right;" onclick="logout()">
-        <!--
-        <h3 id="name"></h3>
-        <h3 id="email"></h3>
-        -->
+        <img id="avatar" style="width: 32px;border-radius:50%;float: right;" onclick="requestNewAccessToken()">
     </div>
     <a id="login" class="loginbtn">Sign in</a>
     <script>
@@ -110,6 +113,7 @@
             uiconfig.delete('auth');
         }
 
+        // Set up logo, and request user access token, refresh token and profile.
         var lock_options = {
             theme: {
                 logo: 'https://www.ai.codes/logo-256x256.png',
@@ -117,20 +121,27 @@
             },
             auth: {
                 redirect: false,
-                sso: false
+                sso: false,
+                params: {
+                  scope: 'offline_access openid',
+                  device: 'Desktop Dashboard'
+                },
             }
         };
 
-
         var lock = new Auth0Lock(AUTH0_CLIENT_ID, AUTH0_DOMAIN, lock_options);
         lock.on('authenticated', (authResult) => {
-            console.log("user authenticated");
+            nConsole.log("User authenticated.");
+            nConsole.log(authResult);
+            nConsole.log("THe UI Config is", uiconfig);
             lock.getProfile(authResult.idToken, (err, profile) => {
                 uiconfig.set('ui-profile', profile);
                 uiconfig.set('auth', authResult);
                 uiconfig.set('token', authResult.idToken);
+                uiconfig.set('refreshToken', authResult.refreshToken);
                 showProfile(profile);
             });
+
             lock.hide();
         });
 

@@ -1,5 +1,5 @@
-/** This file is part of the rendering process. It cannot directly communicate
- * with background.js (main process).
+/** IPC: rendering process.
+ * Cannot directly communicate with background.js (main process).
  */
 
 import { ipcRenderer } from 'electron'; // native electron module

@@ -1,3 +1,5 @@
+/** IPC: main process. */
+
 // This is main process of Electron, started as first thing when your
 // app starts. This script is running through entire life of your application.
 // It doesn't have any windows which you can see on screen, but we can open
@@ -15,6 +17,7 @@ import createWindow from './helpers/window';
 import populateClasses from './warm_up';
 import cache from './simple_cache';
 import { config } from './simple_config';
+import { fetchNewAccessToken } from './token';
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
@@ -107,7 +110,7 @@ if (env.name !== 'production') {
  */
 /*
 function captureUserToken(window, content) {
-  // Issue an async request. Will be captured by the event above.
+   // Issue an async request. Will be captured by the event above.
    content.on('did-navigate', (event, url) => {
    content.on('found-in-page', (foundEvent, result) => {
    console.log('... found in page event is triggered....');
@@ -211,3 +214,7 @@ ipcMain.on('save-preference', (event, updatedPreferences) => {
   config.set('preferences', updatedPreferences);
 });
 
+ipcMain.on('get-new-access-token', (event) => {
+  const refreshToken = config.get('refreshToken');
+  fetchNewAccessToken(refreshToken);
+});

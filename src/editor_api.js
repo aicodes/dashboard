@@ -1,3 +1,4 @@
+/** IPC: main process. */
 /**
  * Owned by the electron main process. This module defines communication protocol between code
  * editors and ai.codes local server. Implemented as an express server.
