@@ -52,7 +52,7 @@ ipcRenderer.on('ice-display', updateModelContextAndView);
 
 ipcRenderer.on('similarity-lookup',
     (event, contextId, className, outerMethod, cacheKey, shouldUpdateDash) => {
-      fetchSimilarity(className, outerMethod, result => {
+      fetchSimilarity(className, outerMethod, (result) => {
         // server has it. otherwise there is no hope to updateContext ice.
         if (result.status !== 404) {
           saveToCache(cacheKey, result);
@@ -62,7 +62,7 @@ ipcRenderer.on('similarity-lookup',
     });
 
 ipcRenderer.on('usage-lookup', (event, contextId, className) => {
-  fetchMethodUsage(className, results => {
+  fetchMethodUsage(className, (results) => {
     if (results.status !== 404) {
       saveToCache(className, results);
       updateModelContextAndView(null, contextId, className, results);

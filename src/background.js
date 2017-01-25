@@ -9,10 +9,10 @@
 // The proper way to do IPC is through ipcMain and ipcRender.
 // This process is `ipcMain`.
 
-import {os} from 'os';
-import {app, Menu, ipcMain, autoUpdater} from 'electron';
-import {devMenuTemplate} from './menu/dev_menu_template';
-import {editMenuTemplate} from './menu/edit_menu_template';
+import { os } from 'os';
+import { app, Menu, ipcMain, autoUpdater } from 'electron';
+import { devMenuTemplate } from './menu/dev_menu_template';
+import { editMenuTemplate } from './menu/edit_menu_template';
 import createWindow from './helpers/window';
 import populateClasses from './warm_up';
 import cache from './simple_cache';
@@ -71,7 +71,7 @@ function configAutoUpdater(updater, content) {
   updater.on('update-downloaded',
     (event, releaseNotes, releaseName, releaseDate, updateURL) => {
       content.send('app-update-downloaded', releaseName);
-    }
+    },
   );
   updater.on('checking-for-update', () => {
     console.log('Checking for updates');
@@ -203,7 +203,7 @@ ipcMain.on('ice-cache', (event, className, extension) => {
 ipcMain.on('load-preference', (event) => {
   const result = config.get('preferences');
   if (result === undefined) {
-    config.set('preferences', {incognito: []});
+    config.set('preferences', { incognito: [] });
   }
 
   event.sender.send('update-preference-display', config.get('preferences'));

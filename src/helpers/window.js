@@ -8,7 +8,7 @@ import jetpack from 'fs-jetpack';
 
 export default function (name, options) {
   const userDataDir = jetpack.cwd(app.getPath('userData'));
-  const stateStoreFile = 'window-state-' + name + '.json';
+  const stateStoreFile = `window-state-${name}.json`;
   const defaultSize = {
     width: options.width,
     height: options.height,
@@ -54,9 +54,7 @@ export default function (name, options) {
   };
 
   const ensureVisibleOnSomeDisplay = function (windowState) {
-    const visible = screen.getAllDisplays().some(function (display) {
-      return windowWithinBounds(windowState, display.bounds);
-    });
+    const visible = screen.getAllDisplays().some(display => windowWithinBounds(windowState, display.bounds));
     if (!visible) {
             // Window is partially or fully not visible now.
             // Reset it to safe defaults.

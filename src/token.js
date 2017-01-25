@@ -4,8 +4,8 @@ import { config } from './simple_config';
 
 const request = require('request');
 
-const AUTH0_CLIENT_ID='oxMGzY0M3IjmvNJ0tplq3vKgwa6965Nh';
-const AUTH0_DOMAIN='aicodes.auth0.com';
+const AUTH0_CLIENT_ID = 'oxMGzY0M3IjmvNJ0tplq3vKgwa6965Nh';
+const AUTH0_DOMAIN = 'aicodes.auth0.com';
 
 /**
  * Fetch refresh token from oauth server.
@@ -19,10 +19,10 @@ function fetchNewAccessToken(refresh_token) {
       'User-Agent': 'Dashboard',
     },
     json: {
-      "client_id":       AUTH0_CLIENT_ID,
-      "grant_type":      "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      "refresh_token":   refresh_token,
-      "api_type":        "app"
+      client_id: AUTH0_CLIENT_ID,
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      refresh_token,
+      api_type: 'app',
     },
   };
   request(option, (error, response, body) => {
@@ -37,4 +37,4 @@ function fetchNewAccessToken(refresh_token) {
 
 export {
   fetchNewAccessToken,
-}
+};

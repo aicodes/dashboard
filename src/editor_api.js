@@ -27,10 +27,9 @@ import { contextStore } from './context_store';
 import { config } from './simple_config';
 
 const primitiveType = new Set(['boolean', 'byte', 'char', 'short',
-    'int', 'long', 'float', 'double',]);
+  'int', 'long', 'float', 'double',]);
 
 function createExpressServer(content, serverCache, isIncognitoClass) {
-
   function eraseGenericType(typeName) {
     return typeName.split('<')[0];
   }
@@ -167,7 +166,7 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
     fetchSnippets(query.intention, (snippets) => {
       result.snippets = rewriteSnippets(query.symbols, snippets);
       res.json(result);
-    }, (error => {
+    }, ((error) => {
       result.header.status = 400;
       result.header.message = error;
       res.json(result);
@@ -191,7 +190,6 @@ function createExpressServer(content, serverCache, isIncognitoClass) {
     const contextId = req.params.contextId;
     const className = req.params.className;
     const outerMethod = req.params.outerMethod;
-
 
 
     const context = {
