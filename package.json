@@ -64,7 +64,7 @@
     "electron-config": "^0.2.1",
     "express": "^4.14.0",
     "request": "^2.75.0",
-    "socket.io": "^1.4.8"
+    "socket.io": "^2.4.0"
   },
   "optionalDependencies": {}
 }
